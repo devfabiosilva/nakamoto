@@ -37,6 +37,10 @@
 *.hex
 nakamoto
 
+#projects
+*.nkm
+out.txt
+
 # Debug files
 *.dSYM/
 *.su
