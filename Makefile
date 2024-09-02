@@ -2,7 +2,9 @@ CC=gcc
 STRIP=strip
 CURDIR=$(PWD)
 INCLUDEDIR=$(CURDIR)/include
+INCLUDEDIR_TEST=$(INCLUDEDIR)/test
 SOURCE_DIR=$(CURDIR)/src
+TEST_DIR=$(CURDIR)/test
 
 THIRD_PARTY_DIR=$(CURDIR)/third-party
 OPENSSL_GIT=https://github.com/openssl/openssl.git
@@ -111,6 +113,13 @@ else
 	@echo "Nothing to do $(TARG)"
 endif
 
+ifneq ("$(wildcard $(TEST_DIR)/test)","")
+	@echo "Removing test ..."
+	rm -v $(TEST_DIR)/test
+else
+	@echo "Nothing to do test"
+endif
+
 install_ssl:
 ifeq ("$(wildcard $(OPENSSL_DIR)/*)","")
 	@echo "Cloning OpenSSL $(OPENSSL_BRANCH) at $(THIRD_PARTY_DIR) ..."
@@ -135,6 +144,15 @@ ifneq ("$(wildcard $(OPENSSL_DIR)/*)","")
 	@echo "Compiling $(TARG_DBG)..."
 	@$(CC) -O2 -o $(TARG_DBG) main.c $(SOURCE_DIR)/utility_debug.o $(SOURCE_DIR)/rnd_debug.o $(SOURCE_DIR)/nakamoto_debug.o $(SOURCE_DIR)/logger_debug.o -I$(INCLUDEDIR) $(DEBUG_FLAG)
 	@echo "Finished"
+else
+	@echo $(NAKAMOTO_INSTALL_MSG)
+endif
+
+test: rnd_debug.o utility_debug.o nakamoto_debug.o logger_debug.o
+ifneq ("$(wildcard $(OPENSSL_DIR)/*)","")
+	@echo "Build test (TEST) object"
+	@$(CC) -O2 $(TEST_DIR)/test.c $(SOURCE_DIR)/utility_debug.o $(SOURCE_DIR)/rnd_debug.o $(SOURCE_DIR)/nakamoto_debug.o $(SOURCE_DIR)/logger_debug.o $(SOURCE_DIR)/test/asserts.c -I$(INCLUDEDIR) -I$(INCLUDEDIR_TEST) -o $(TEST_DIR)/test $(DEBUG_FLAG)
+	cd $(TEST_DIR);./test
 else
 	@echo $(NAKAMOTO_INSTALL_MSG)
 endif
