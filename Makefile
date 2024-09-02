@@ -14,6 +14,8 @@ OPENSSL_COMPILED_DIR=$(OPENSSL_DIR)/compiled
 OPENSSL_COMPILED_DIR_LIB=$(OPENSSL_COMPILED_DIR)/lib64
 OPENSSL_COMPILED_DIR_INCLUDE=$(OPENSSL_COMPILED_DIR)/include
 
+TEST_FILE_NAME=test.t
+
 FLAG=-Wall -Wno-stringop-truncation -I$(OPENSSL_COMPILED_DIR_INCLUDE) -L$(OPENSSL_COMPILED_DIR_LIB) -lcrypto -lpthread -ldl -DLE
 DEBUG_FLAG=-g -fsanitize=address,leak -DDEBUG $(FLAG)
 TARG=nakamoto
@@ -113,11 +115,11 @@ else
 	@echo "Nothing to do $(TARG)"
 endif
 
-ifneq ("$(wildcard $(TEST_DIR)/test)","")
-	@echo "Removing test ..."
-	rm -v $(TEST_DIR)/test
+ifneq ("$(wildcard $(TEST_DIR)/$(TEST_FILE_NAME))","")
+	@echo "Removing $(TEST_FILE_NAME) ..."
+	rm -v $(TEST_DIR)/$(TEST_FILE_NAME)
 else
-	@echo "Nothing to do test"
+	@echo "Nothing to do $(TEST_FILE_NAME)"
 endif
 
 install_ssl:
@@ -151,8 +153,8 @@ endif
 test: rnd_debug.o utility_debug.o nakamoto_debug.o logger_debug.o
 ifneq ("$(wildcard $(OPENSSL_DIR)/*)","")
 	@echo "Build test (TEST) object"
-	@$(CC) -O2 $(TEST_DIR)/test.c $(SOURCE_DIR)/utility_debug.o $(SOURCE_DIR)/rnd_debug.o $(SOURCE_DIR)/nakamoto_debug.o $(SOURCE_DIR)/logger_debug.o $(SOURCE_DIR)/test/asserts.c -I$(INCLUDEDIR) -I$(INCLUDEDIR_TEST) -o $(TEST_DIR)/test $(DEBUG_FLAG)
-	cd $(TEST_DIR);./test
+	@$(CC) -O2 $(TEST_DIR)/test.c $(SOURCE_DIR)/utility_debug.o $(SOURCE_DIR)/rnd_debug.o $(SOURCE_DIR)/nakamoto_debug.o $(SOURCE_DIR)/logger_debug.o $(SOURCE_DIR)/test/asserts.c -I$(INCLUDEDIR) -I$(INCLUDEDIR_TEST) -o $(TEST_DIR)/$(TEST_FILE_NAME) $(DEBUG_FLAG)
+	cd $(TEST_DIR);./$(TEST_FILE_NAME)
 else
 	@echo $(NAKAMOTO_INSTALL_MSG)
 endif
