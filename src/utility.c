@@ -563,7 +563,9 @@ if (size_tmp&(N_ALIGNMENT_MASK)) {\
   size_tmp+=N_ALIGNMENT;\
 }
 
+#ifndef VISIBLE_FOR_TEST
 static
+#endif
 void *n_malloc(size_t *size_align, size_t size)
 {
   uint8_t *result;

@@ -2,6 +2,8 @@
 #include <logger.h>
 #include <nakamoto.h>
 #include <string.h>
+#include <rnd.h>
+#include <stdlib.h>
 
 #define VERSION_MAJOR_STR "0"
 #define VERSION_MINOR_STR "1"
@@ -12,6 +14,8 @@
 #define COMPARE_VECTORS(vec1, vec2) is_vec_content_eq(vec1, sizeof(vec1), vec2, sizeof(vec2))
 
 void TEST_check_digest();
+void TEST_entropy();
+void TEST_entropy_destroy();
 
 int main(int argc, char **argv)
 {
@@ -26,6 +30,7 @@ int main(int argc, char **argv)
   )
 
   TEST_check_digest();
+  TEST_entropy();
 
   end_tests();
   return 0;
@@ -71,3 +76,31 @@ void TEST_check_digest() {
 
 }
 
+void TEST_entropy()
+{
+  uint8_t *random_values;
+  size_t randon_values_size_aligned;
+
+  TITLE_MSG("Begin entropy test")
+  INFO_MSG("Opening random ...")
+
+  open_random(NULL);
+
+#define FIRST_VALUE_SIZE 56
+  random_values=(uint8_t *)n_malloc(&randon_values_size_aligned, FIRST_VALUE_SIZE);
+
+  C_ASSERT_NOT_NULL(random_values, CTEST_SETTER(
+   CTEST_TITLE("Testing n_malloc to alloc pointer %p with size %lu bytes", random_values, randon_values_size_aligned),
+   CTEST_INFO("Return value SHOULD be not NULL")
+  ))
+
+  free(random_values);
+#undef FIRST_VALUE_SIZE
+
+
+  close_random();
+}
+
+void TEST_entropy_destroy() {
+
+}

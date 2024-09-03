@@ -81,6 +81,38 @@ else
 	@echo $(NAKAMOTO_INSTALL_MSG)
 endif
 
+rnd_debug_test.o:
+ifneq ("$(wildcard $(OPENSSL_DIR)/*)","")
+	@echo "Build random (DEBUG) object"
+	@$(CC) -O2 -c $(SOURCE_DIR)/rnd.c -I$(INCLUDEDIR) -o $(SOURCE_DIR)/rnd_debug.o $(DEBUG_FLAG) -DVISIBLE_FOR_TEST
+else
+	@echo $(NAKAMOTO_INSTALL_MSG)
+endif
+
+utility_debug_test.o:
+ifneq ("$(wildcard $(OPENSSL_DIR)/*)","")
+	@echo "Build utility (DEBUG) object"
+	@$(CC) -O2 -c $(SOURCE_DIR)/utility.c -I$(INCLUDEDIR) -o $(SOURCE_DIR)/utility_debug.o $(DEBUG_FLAG) -DVISIBLE_FOR_TEST
+else
+	@echo $(NAKAMOTO_INSTALL_MSG)
+endif
+
+nakamoto_debug_test.o:
+ifneq ("$(wildcard $(OPENSSL_DIR)/*)","")
+	@echo "Build nakamoto object"
+	@$(CC) -O2 -c $(SOURCE_DIR)/nakamoto.c -I$(INCLUDEDIR) -o $(SOURCE_DIR)/nakamoto_debug.o $(DEBUG_FLAG) -DVISIBLE_FOR_TEST
+else
+	@echo $(NAKAMOTO_INSTALL_MSG)
+endif
+
+logger_debug_test.o:
+ifneq ("$(wildcard $(OPENSSL_DIR)/*)","")
+	@echo "Build logger object"
+	@$(CC) -O2 -c $(SOURCE_DIR)/logger.c -I$(INCLUDEDIR) -o $(SOURCE_DIR)/logger_debug.o $(DEBUG_FLAG) -DVISIBLE_FOR_TEST
+else
+	@echo $(NAKAMOTO_INSTALL_MSG)
+endif
+
 main: rnd.o utility.o nakamoto.o
 ifneq ("$(wildcard $(OPENSSL_DIR)/*)","")
 	@echo "Compiling $(TARG)..."
@@ -150,10 +182,10 @@ else
 	@echo $(NAKAMOTO_INSTALL_MSG)
 endif
 
-test: rnd_debug.o utility_debug.o nakamoto_debug.o logger_debug.o
+test: rnd_debug_test.o utility_debug_test.o nakamoto_debug_test.o logger_debug_test.o
 ifneq ("$(wildcard $(OPENSSL_DIR)/*)","")
 	@echo "Build test (TEST) object"
-	@$(CC) -O2 $(TEST_DIR)/test.c $(SOURCE_DIR)/utility_debug.o $(SOURCE_DIR)/rnd_debug.o $(SOURCE_DIR)/nakamoto_debug.o $(SOURCE_DIR)/logger_debug.o $(SOURCE_DIR)/test/asserts.c -I$(INCLUDEDIR) -I$(INCLUDEDIR_TEST) -o $(TEST_DIR)/$(TEST_FILE_NAME) $(DEBUG_FLAG)
+	@$(CC) -O2 $(TEST_DIR)/test.c $(SOURCE_DIR)/utility_debug.o $(SOURCE_DIR)/rnd_debug.o $(SOURCE_DIR)/nakamoto_debug.o $(SOURCE_DIR)/logger_debug.o $(SOURCE_DIR)/test/asserts.c -I$(INCLUDEDIR) -I$(INCLUDEDIR_TEST) -o $(TEST_DIR)/$(TEST_FILE_NAME) $(DEBUG_FLAG) -DVISIBLE_FOR_TEST
 	cd $(TEST_DIR);./$(TEST_FILE_NAME)
 else
 	@echo $(NAKAMOTO_INSTALL_MSG)

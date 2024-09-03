@@ -67,5 +67,9 @@ void pass_free(struct pass_t **);
 
 char *get_version_str();
 
+#ifdef VISIBLE_FOR_TEST
+void *n_malloc(size_t *, size_t);
+#endif
+
 #endif
 
