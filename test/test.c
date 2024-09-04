@@ -15,7 +15,7 @@
 
 void TEST_check_digest();
 void TEST_entropy();
-void TEST_entropy_destroy();
+void TEST_generate_random_pass();
 
 int main(int argc, char **argv)
 {
@@ -31,6 +31,7 @@ int main(int argc, char **argv)
 
   TEST_check_digest();
   TEST_entropy();
+  TEST_generate_random_pass();
 
   end_tests();
   return 0;
@@ -76,13 +77,6 @@ void TEST_check_digest() {
 
 }
 
-void TEST_entropy()
-{
-  uint8_t *random_values;
-  size_t random_values_size_aligned;
-  uint64_t wait_time;
-  int err;
-
 #define TEST_TYPE_NAME(type) {#type, type}
   struct test_entropy_t {
     const char *name;
@@ -94,9 +88,24 @@ void TEST_entropy()
     TEST_TYPE_NAME(F_ENTROPY_TYPE_PARANOIC),
     {NULL}
   };
+#undef TEST_TYPE_NAME
+
+#define MAX_TIMEOUT_IN_SECOND 12
+
+void TEST_entropy_destroy(void *ctx)
+{
+  free(ctx);
+  close_random();
+}
+
+void TEST_entropy()
+{
+  uint8_t *random_values;
+  size_t random_values_size_aligned;
+  uint64_t wait_time;
+  int err;
 
   struct test_entropy_t *tep = TEST_ENTROPY_TYPE;
-#undef TEST_TYPE_NAME
 
   TITLE_MSG("Begin entropy test")
   INFO_MSG("Opening random ...")
@@ -114,7 +123,7 @@ void TEST_entropy()
   C_ASSERT_TRUE(random_values_size_aligned > FIRST_VALUE_SIZE, CTEST_SETTER(
    CTEST_TITLE("Check if memory is aligned"),
    CTEST_INFO("Value %lu bytes with aligned size %lu bytes", FIRST_VALUE_SIZE, random_values_size_aligned),
-   CTEST_ON_ERROR_CB(free, (void *)random_values)
+   CTEST_ON_ERROR_CB(TEST_entropy_destroy, (void *)random_values)
   ))
 
   free(random_values);
@@ -131,7 +140,7 @@ void TEST_entropy()
   C_ASSERT_TRUE(random_values_size_aligned == SECOND_VALUE_SIZE, CTEST_SETTER(
    CTEST_TITLE("Check if memory is aligned (SECOND TEST)"),
    CTEST_INFO("Value %lu bytes with aligned size %lu bytes (SECOND TEST)", SECOND_VALUE_SIZE, random_values_size_aligned),
-   CTEST_ON_ERROR_CB(free, (void *)random_values)
+   CTEST_ON_ERROR_CB(TEST_entropy_destroy, (void *)random_values)
   ))
 #undef SECOND_VALUE_SIZE
 
@@ -143,7 +152,6 @@ void TEST_entropy()
     wait_time = 1;
 
 system_entropy_ret:
-#define MAX_TIMEOUT_IN_SECOND 12
 
     INFO_MSG_FMT("Testing entropy %s with random number generator with timeout %lu s ...", tep->name, wait_time)
 
@@ -158,20 +166,78 @@ system_entropy_ret:
      CTEST_TITLE("Check if entropy %s has SUCCESS", tep->name),
      CTEST_ON_ERROR("Check entropy %s. Return error : %d MAX_TIMEOUT_IN_SECOND = %lu s reached", tep->name, err, MAX_TIMEOUT_IN_SECOND),
      CTEST_ON_SUCCESS("Entropy %s success", tep->name),
-     CTEST_ON_ERROR_CB(free, (void *)random_values)
+     CTEST_ON_ERROR_CB(TEST_entropy_destroy, (void *)random_values)
     ))
-
-#undef MAX_TIMEOUT_IN_SECOND
 
     INFO_MSG_FMT("Vector random_values at (%p) with size %lu bytes with random data:", random_values, random_values_size_aligned)
     debug_dump(random_values, random_values_size_aligned);
     tep++;
   }
-  free(random_values);
+
+  TEST_entropy_destroy((void *)random_values);
+}
+
+void TEST_generate_random_pass_destroy(void *ctx)
+{
+  pass_list_free((struct pass_list_t **)ctx);
+  close_random();
+}
+
+void TEST_generate_random_pass()
+{
+  int err;
+  uint8_t wait_time;
+  struct test_entropy_t *tep = TEST_ENTROPY_TYPE;
+
+#define PASS_LIST_NUM 50
+  struct pass_list_t *pass_list = pass_list_new(PASS_LIST_NUM);
+
+  TITLE_MSG("Begin generate random password ...")
+
+  open_random(NULL);
+
+  C_ASSERT_NOT_NULL(pass_list, CTEST_SETTER(
+   CTEST_TITLE("Testing pass_list is not NULL"),
+   CTEST_INFO("Return value SHOULD be not NULL")
+  ))
+#undef PASS_LIST_NUM
+
+  while (tep->name) {
+    wait_time=1;
+
+    INFO_MSG_FMT("Testing pass list %s with random number generator with timeout %lu s ...", tep->name, wait_time)
+
+generate_random_pass_ret:
+    err = randomize_and_print_pass_list(pass_list, tep->type, wait_time);
+
+    if ((err != 0) && (wait_time < MAX_TIMEOUT_IN_SECOND)) {
+      wait_time++;
+      WARN_MSG_FMT("Pass list %s error %d. Trying new timeout %lu", tep->name, err, ++wait_time)
+      goto generate_random_pass_ret;
+    }
+
+    C_ASSERT_TRUE(err == 0, CTEST_SETTER(
+     CTEST_TITLE("Check if pass list with %s has SUCCESS", tep->name),
+     CTEST_ON_ERROR("Check pass list %s fail. Return error : %d MAX_TIMEOUT_IN_SECOND = %lu s reached", tep->name, err, MAX_TIMEOUT_IN_SECOND),
+     CTEST_ON_SUCCESS("Pass list %s success", tep->name),
+     CTEST_ON_ERROR_CB(TEST_generate_random_pass_destroy, (void *)&pass_list)
+    ))
+
+    tep++;
+  }
+
+  INFO_MSG_FMT("Destroying pass list (%p)", pass_list)
+  pass_list_free(&pass_list);
+
+  C_ASSERT_NULL(pass_list, CTEST_SETTER(
+   CTEST_TITLE("Check if pass_list is NULL")
+  ))
+
+  WARN_MSG("Testing \"double free\" guard is safe")
+  pass_list_free(&pass_list);
 
   close_random();
 }
 
-void TEST_entropy_destroy() {
+#undef MAX_TIMEOUT_IN_SECOND
 
-}
