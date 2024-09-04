@@ -79,7 +79,24 @@ void TEST_check_digest() {
 void TEST_entropy()
 {
   uint8_t *random_values;
-  size_t randon_values_size_aligned;
+  size_t random_values_size_aligned;
+  uint64_t wait_time;
+  int err;
+
+#define TEST_TYPE_NAME(type) {#type, type}
+  struct test_entropy_t {
+    const char *name;
+    uint32_t type;
+  } TEST_ENTROPY_TYPE[] = {
+    TEST_TYPE_NAME(F_ENTROPY_TYPE_NOT_RECOMENDED),
+    TEST_TYPE_NAME(F_ENTROPY_TYPE_GOOD),
+    TEST_TYPE_NAME(F_ENTROPY_TYPE_EXCELENT),
+    TEST_TYPE_NAME(F_ENTROPY_TYPE_PARANOIC),
+    {NULL}
+  };
+
+  struct test_entropy_t *tep = TEST_ENTROPY_TYPE;
+#undef TEST_TYPE_NAME
 
   TITLE_MSG("Begin entropy test")
   INFO_MSG("Opening random ...")
@@ -87,16 +104,70 @@ void TEST_entropy()
   open_random(NULL);
 
 #define FIRST_VALUE_SIZE 56
-  random_values=(uint8_t *)n_malloc(&randon_values_size_aligned, FIRST_VALUE_SIZE);
+  random_values=(uint8_t *)n_malloc(&random_values_size_aligned, FIRST_VALUE_SIZE);
 
   C_ASSERT_NOT_NULL(random_values, CTEST_SETTER(
-   CTEST_TITLE("Testing n_malloc to alloc pointer %p with size %lu bytes", random_values, randon_values_size_aligned),
+   CTEST_TITLE("Testing n_malloc to alloc pointer %p with size %lu bytes", random_values, random_values_size_aligned),
    CTEST_INFO("Return value SHOULD be not NULL")
+  ))
+
+  C_ASSERT_TRUE(random_values_size_aligned > FIRST_VALUE_SIZE, CTEST_SETTER(
+   CTEST_TITLE("Check if memory is aligned"),
+   CTEST_INFO("Value %lu bytes with aligned size %lu bytes", FIRST_VALUE_SIZE, random_values_size_aligned),
+   CTEST_ON_ERROR_CB(free, (void *)random_values)
   ))
 
   free(random_values);
 #undef FIRST_VALUE_SIZE
 
+#define SECOND_VALUE_SIZE 1024
+  random_values=(uint8_t *)n_malloc(&random_values_size_aligned, SECOND_VALUE_SIZE);
+
+  C_ASSERT_NOT_NULL(random_values, CTEST_SETTER(
+   CTEST_TITLE("Testing n_malloc to second alloc pointer %p with size %lu bytes", random_values, random_values_size_aligned),
+   CTEST_INFO("Return value SHOULD be not NULL")
+  ))
+
+  C_ASSERT_TRUE(random_values_size_aligned == SECOND_VALUE_SIZE, CTEST_SETTER(
+   CTEST_TITLE("Check if memory is aligned (SECOND TEST)"),
+   CTEST_INFO("Value %lu bytes with aligned size %lu bytes (SECOND TEST)", SECOND_VALUE_SIZE, random_values_size_aligned),
+   CTEST_ON_ERROR_CB(free, (void *)random_values)
+  ))
+#undef SECOND_VALUE_SIZE
+
+  INFO_MSG_FMT("Cleaning vector random_values at (%p) with size %lu bytes", random_values, random_values_size_aligned)
+  memset(random_values, 0, random_values_size_aligned);
+  debug_dump(random_values, random_values_size_aligned);
+
+  while (tep->name) {
+    wait_time = 1;
+
+system_entropy_ret:
+#define MAX_TIMEOUT_IN_SECOND 12
+
+    INFO_MSG_FMT("Testing entropy %s with random number generator with timeout %lu s ...", tep->name, wait_time)
+
+    err=verify_system_entropy(tep->type, random_values, random_values_size_aligned, wait_time);
+
+    if ((err != 0) && (wait_time < MAX_TIMEOUT_IN_SECOND)) {
+      WARN_MSG_FMT("verify_system_entropy %s error %d. Trying new timeout %lu", tep->name, err, ++wait_time)
+      goto system_entropy_ret;
+    }
+
+    C_ASSERT_TRUE(err == 0, CTEST_SETTER(
+     CTEST_TITLE("Check if entropy %s has SUCCESS", tep->name),
+     CTEST_ON_ERROR("Check entropy %s. Return error : %d MAX_TIMEOUT_IN_SECOND = %lu s reached", tep->name, err, MAX_TIMEOUT_IN_SECOND),
+     CTEST_ON_SUCCESS("Entropy %s success", tep->name),
+     CTEST_ON_ERROR_CB(free, (void *)random_values)
+    ))
+
+#undef MAX_TIMEOUT_IN_SECOND
+
+    INFO_MSG_FMT("Vector random_values at (%p) with size %lu bytes with random data:", random_values, random_values_size_aligned)
+    debug_dump(random_values, random_values_size_aligned);
+    tep++;
+  }
+  free(random_values);
 
   close_random();
 }
