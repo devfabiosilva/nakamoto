@@ -16,12 +16,13 @@
 void TEST_check_digest();
 void TEST_entropy();
 void TEST_generate_random_pass();
+void TEST_encryption_aes_256();
 
 int main(int argc, char **argv)
 {
   TITLE_MSG("Initializing tests")
 
-  C_ASSERT_EQUAL_STRING_IGNORE_CASE(
+  C_ASSERT_EQUAL_STRING(
     VERSION_MAJOR_STR"."VERSION_MINOR_STR"."VERSION_REVISION_STR,
     get_version_str(),
     CTEST_SETTER(
@@ -32,6 +33,7 @@ int main(int argc, char **argv)
   TEST_check_digest();
   TEST_entropy();
   TEST_generate_random_pass();
+  TEST_encryption_aes_256();
 
   end_tests();
   return 0;
@@ -41,7 +43,7 @@ void TEST_check_digest() {
   int err;
   uint8_t sha512[64];
   char *errMsg;
-  #define DIGEST_MESSAGE "test pointer\x0A"
+#define DIGEST_MESSAGE "test pointer\x0A"
   //sha512sum_check = echo "test pointer" | sha512sum
   uint8_t sha512sum_check[] = {
     0xda, 0x28, 0xeb, 0x1a, 0xc5, 0xe0, 0x56, 0xbd,
@@ -75,6 +77,42 @@ void TEST_check_digest() {
     CTEST_ON_SUCCESS("Success. Vectors are equals")
   ))
 
+  err=check_hash512(sha512sum_check, (uint8_t *)STR_CONST(DIGEST_MESSAGE), &errMsg);
+
+  C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
+   CTEST_TITLE("Testing %p for success HASH message", errMsg),
+   CTEST_INFO("Pointer string value SHOULD be not NULL")
+  ))
+
+  C_ASSERT_EQUAL_STRING("Checksum SUCCESS\n", errMsg, CTEST_SETTER(
+   CTEST_TITLE("Testing successful hash message")
+  ))
+
+  C_ASSERT_TRUE(err != 0, CTEST_SETTER(
+    CTEST_TITLE("Testing check_hash512 with correct digest message..."),
+    CTEST_INFO("Return value SHOULD be NOT EQUAL ZERO (%d)", err),
+    CTEST_ON_ERROR("Was unexpected: value equal zero"),
+    CTEST_ON_SUCCESS("Success. Return = %d \n%s", err, errMsg)
+  ))
+
+  err=check_hash512(sha512sum_check, (uint8_t *)STR_CONST(DIGEST_MESSAGE"_ABC"), &errMsg);
+#undef DIGEST_MESSAGE
+
+  C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
+   CTEST_TITLE("Testing %p for not success HASH message", errMsg),
+   CTEST_INFO("Pointer string value SHOULD be not NULL")
+  ))
+
+  C_ASSERT_EQUAL_STRING("Wrong checksum\n", errMsg, CTEST_SETTER(
+   CTEST_TITLE("Testing NOT successful hash message")
+  ))
+
+  C_ASSERT_TRUE(err == 0, CTEST_SETTER(
+    CTEST_TITLE("Testing check_hash512 with incorrect digest message..."),
+    CTEST_INFO("Return value SHOULD be EQUAL ZERO (%d)", err),
+    CTEST_ON_ERROR("Was unexpected: value not equal zero"),
+    CTEST_ON_SUCCESS("Success. Return = %d\n%s", err, errMsg)
+  ))
 }
 
 #define TEST_TYPE_NAME(type) {#type, type}
@@ -210,8 +248,9 @@ void TEST_generate_random_pass()
 generate_random_pass_ret:
     err = randomize_and_print_pass_list(pass_list, tep->type, wait_time);
 
+    printf("\n\n");
+
     if ((err != 0) && (wait_time < MAX_TIMEOUT_IN_SECOND)) {
-      wait_time++;
       WARN_MSG_FMT("Pass list %s error %d. Trying new timeout %lu", tep->name, err, ++wait_time)
       goto generate_random_pass_ret;
     }
@@ -240,4 +279,9 @@ generate_random_pass_ret:
 }
 
 #undef MAX_TIMEOUT_IN_SECOND
+
+void TEST_encryption_aes_256()
+{
+//TODO IMPLEMENT
+}
 

@@ -405,7 +405,7 @@ int aes_256_cbc_encrypt(
 
   if (((*out_size)==0)||(in_size==0)) {
     SSL_MSG_SET("Invalid output/input data\n")
-    return -48;  
+    return -48;
   }
 
   if (in_size&0x0F) {
