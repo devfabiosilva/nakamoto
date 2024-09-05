@@ -1,6 +1,6 @@
 # Nakamoto
 
-Nakamoto is a 2 layer encryption tool to protect your data and your cyptocurrency pryvate keys
+Nakamoto is a 2 layer encryption tool to protect your data and your cryptocurrency private keys
 
 ## Usage
 
@@ -41,7 +41,7 @@ Decrypt file _out.nkm_
 
 ### First time installation
 
-You need to install Open SSL. So
+You need to install Open SSL.
 
 ```sh
 make install_ssl
