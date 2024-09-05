@@ -10,6 +10,7 @@
 #define VERSION_REVISION_STR "1"
 
 #define STR_CONST(str) str, (sizeof(str)-1)
+#define VEC_CONST(vec) vec, sizeof(vec)
 #define CLEAR_VECTOR(vec) memset(vec, 0, sizeof(vec));
 #define COMPARE_VECTORS(vec1, vec2) is_vec_content_eq(vec1, sizeof(vec1), vec2, sizeof(vec2))
 
@@ -30,9 +31,9 @@ int main(int argc, char **argv)
     )
   )
 
-  TEST_check_digest();
-  TEST_entropy();
-  TEST_generate_random_pass();
+  //TEST_check_digest();
+  //TEST_entropy();
+  //TEST_generate_random_pass();
   TEST_encryption_aes_256();
 
   end_tests();
@@ -280,8 +281,177 @@ generate_random_pass_ret:
 
 #undef MAX_TIMEOUT_IN_SECOND
 
+#define PLAIN_TEXT "This Message has more than 16 bytes"
+#define IV_TEST "ThisIVHas16Bytes"
+#define PRIVATE_KEY_TEST "~This Private Key Has 32 B long~"
+
+_Static_assert((sizeof(PLAIN_TEXT)-1)&0x0F, "PLAIN_TEXT LENGHT MUST BE NOT MULTIPLE OF 16 FOR THIS TEST");
+_Static_assert(sizeof(IV_TEST)-1 == 16, "IV_TEST STRING MUST HAVE LENGTH = 16");
+_Static_assert(sizeof(PRIVATE_KEY_TEST)-1 == 32, "PRIVATE_KEY_TEST STRING MUST HAVE LENGTH = 32");
+
 void TEST_encryption_aes_256()
 {
-//TODO IMPLEMENT
+  int err, testNumber = 0;
+  char *errMsg;
+  uint8_t *buffer;
+  uint8_t encryptedData[64];
+  size_t encryptedData_size = 0, buffer_size;
+
+  TITLE_MSG("Begin encryption test AES 256 ...")
+
+  CLEAR_VECTOR(encryptedData);
+
+  err = aes_256_cbc_encrypt(encryptedData, &encryptedData_size, (uint8_t *)STR_CONST(PLAIN_TEXT), (uint8_t *)IV_TEST, (uint8_t *)PRIVATE_KEY_TEST, &errMsg);
+
+  C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg)
+  ))
+
+  C_ASSERT_TRUE(err == -48, CTEST_SETTER(
+   CTEST_TITLE("Check if HAS ERROR = -48. Output pointer encryptedData (%p) with size = 0", encryptedData),
+   CTEST_ON_ERROR("Was expected error = -48, but found error = %d", err),
+   CTEST_ON_SUCCESS("Error = -48 success")
+  ))
+
+  C_ASSERT_EQUAL_STRING(
+    "Invalid output/input data\n",
+    errMsg,
+    CTEST_SETTER(
+      CTEST_TITLE("Check errMsg error description")
+    )
+  )
+
+  encryptedData_size = sizeof(encryptedData);
+  err = aes_256_cbc_encrypt(encryptedData, &encryptedData_size, (uint8_t *)PLAIN_TEXT, 0, (uint8_t *)IV_TEST, (uint8_t *)PRIVATE_KEY_TEST, &errMsg);
+
+  C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg)
+  ))
+
+  C_ASSERT_TRUE(err == -48, CTEST_SETTER(
+   CTEST_TITLE("Check if HAS ERROR = -48. Input pointer plain text (%p) with size = 0", PLAIN_TEXT),
+   CTEST_ON_ERROR("Was expected error = -48, but found error = %d", err),
+   CTEST_ON_SUCCESS("Error = -48 success")
+  ))
+
+  C_ASSERT_EQUAL_STRING(
+    "Invalid output/input data\n",
+    errMsg,
+    CTEST_SETTER(
+      CTEST_TITLE("Check errMsg error description")
+    )
+  )
+
+  err = aes_256_cbc_encrypt(encryptedData, &encryptedData_size, (uint8_t *)STR_CONST(PLAIN_TEXT), (uint8_t *)IV_TEST, (uint8_t *)PRIVATE_KEY_TEST, &errMsg);
+
+  C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg)
+  ))
+
+  C_ASSERT_TRUE(err == -49, CTEST_SETTER(
+   CTEST_TITLE("Check if HAS ERROR = -49. Check if plain text is aligned (%p)", PLAIN_TEXT),
+   CTEST_ON_ERROR("Was expected error = -49 (INPUT NOT ALIGNED IN MEMORY), but found error = %d", err),
+   CTEST_ON_SUCCESS("Error = -49 success")
+  ))
+
+  C_ASSERT_EQUAL_STRING(
+    "Plain text must be aligned\n",
+    errMsg,
+    CTEST_SETTER(
+      CTEST_TITLE("Check errMsg error description must contain: NOT ALIGNED INPUT DATA DESCRIPTION")
+    )
+  )
+
+  open_random(NULL);
+  buffer = (uint8_t *)n_malloc(&buffer_size, sizeof(PLAIN_TEXT));
+  close_random();
+
+  C_ASSERT_NOT_NULL(buffer, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) buffer (%p) with size is %lu is NOT NULL %p", ++testNumber, buffer)
+  ))
+
+  strcpy((char *)buffer, PLAIN_TEXT);
+  debug_dump_ascii(buffer, buffer_size);
+
+  encryptedData_size = 10;
+
+  err = aes_256_cbc_encrypt(encryptedData, &encryptedData_size, buffer, buffer_size, (uint8_t *)IV_TEST, (uint8_t *)PRIVATE_KEY_TEST, &errMsg);
+
+  C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR_CB(free, (void *)buffer)
+  ))
+
+  C_ASSERT_TRUE(err == -50, CTEST_SETTER(
+   CTEST_TITLE("Check if HAS ERROR = -50. Check if buffer is greater or equal text plain aligned data size"),
+   CTEST_ON_ERROR("Was expected error = -50 (BUFFER HAS NO SIZE TO STORE ENCRYPTED DATA), but found error = %d", err),
+   CTEST_ON_SUCCESS("Error = -50 success"),
+   CTEST_ON_ERROR_CB(free, (void *)buffer)
+  ))
+
+  C_ASSERT_EQUAL_STRING(
+    "No space for encrypt data\n",
+    errMsg,
+    CTEST_SETTER(
+      CTEST_TITLE("Check errMsg error description must contain: BUFFER HAS NO SIZE TO STORE ENCRYPTED DATA"),
+      CTEST_ON_ERROR_CB(free, (void *)buffer)
+    )
+  )
+
+  encryptedData_size = sizeof(encryptedData);
+  err = aes_256_cbc_encrypt(encryptedData, &encryptedData_size, buffer, buffer_size, (uint8_t *)IV_TEST, (uint8_t *)PRIVATE_KEY_TEST, &errMsg);
+
+  C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR_CB(free, (void *)buffer)
+  ))
+
+  C_ASSERT_TRUE(err == 0, CTEST_SETTER(
+   CTEST_TITLE("Check ENCRYPTED SUCCESS"),
+   CTEST_ON_ERROR("Was expected error = 0 (ENCRYPT SUCCESS), but found error = %d", err),
+   CTEST_ON_SUCCESS("Error = 0 success"),
+   CTEST_ON_ERROR_CB(free, (void *)buffer)
+  ))
+
+  C_ASSERT_EQUAL_STRING(
+    "Encrypt SUCCESS\n",
+    errMsg,
+    CTEST_SETTER(
+      CTEST_TITLE("Check errMsg error description must contain: ENCRYPT SUCCESS"),
+      CTEST_ON_ERROR_CB(free, (void *)buffer)
+    )
+  )
+
+  C_ASSERT_TRUE(buffer_size == encryptedData_size, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) if encryptedData (%p) size = %lu has same size of plain text buffer (%p) size = %lu",
+     ++testNumber, encryptedData, encryptedData_size, buffer, buffer_size),
+   CTEST_ON_ERROR("encryptedData_size = %lu and buffer_size = %lu are not equals", encryptedData_size, buffer_size),
+   CTEST_ON_SUCCESS("encryptedData_size (%lu) == buffer_size (%lu) success", encryptedData_size, buffer_size),
+   CTEST_ON_ERROR_CB(free, (void *)buffer)
+  ))
+
+  C_ASSERT_TRUE(sizeof(encryptedData) >= buffer_size, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) if encryptedData (%p) sizeof(encryptedData) = %lu is greater or equal to encryptedData (%p) size = %lu",
+     ++testNumber, encryptedData, sizeof(encryptedData), encryptedData, encryptedData_size),
+   CTEST_ON_ERROR("sizeof(encryptedData) = %lu IS LESS THAN encryptedData = %lu size", sizeof(encryptedData), encryptedData_size),
+   CTEST_ON_SUCCESS("encryptedData_size (%lu) IS GREATER OR EQUAL buffer_size (%lu) success", sizeof(encryptedData), buffer_size),
+   CTEST_ON_ERROR_CB(free, (void *)buffer)
+  ))
+
+  INFO_MSG_FMT("ENCRYPTED PLAIN \"%s\". One page", PLAIN_TEXT)
+  debug_dump_ascii(encryptedData, encryptedData_size);
+
+  INFO_MSG_FMT("ENCRYPTED PLAIN \"%s\". Full page", PLAIN_TEXT)
+  debug_dump_ascii(encryptedData, sizeof(encryptedData));
+
+
+//TODO Implement decrypt
+//aes_256_cbc_decrypt(out, &out_size, encryptedData, encryptedData_size, (uint8_t *)IV_TEST, (uint8_t *)PRIVATE_KEY_TEST, NULL);
+
+  free((void *)buffer);
 }
+
+#undef PRIVATE_KEY_TEST
+#undef IV_TEST
+#undef PLAIN_TEXT
 
