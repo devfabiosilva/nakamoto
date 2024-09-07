@@ -743,7 +743,7 @@ void TEST_decryption_aes_256(struct test_encryption_aes_256_t *ctx)
 
   C_ASSERT_TRUE(is_vec_content_eq((uint8_t *)ctx->message, ctx->message_size, decryptedData, ctx->message_size), CTEST_SETTER(
    CTEST_TITLE("Check (%d) if decryptedData (%p) contains original message (%p)", ++testNumber, decryptedData, ctx->message),
-   CTEST_ON_ERROR("decryptedData does NOT contain original message size"),
+   CTEST_ON_ERROR("decryptedData does NOT contain original message"),
    CTEST_ON_SUCCESS("Original message \"%s\" at pointer %p is contained in decrypted data \"%s\" at pointer %p are equals. Success",
      ctx->message, ctx->message, (char *)decryptedData, decryptedData)
   ))
