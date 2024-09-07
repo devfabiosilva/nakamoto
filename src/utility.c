@@ -491,7 +491,7 @@ int aes_256_cbc_decrypt(
   }
 
   if (in_size&0x0F) {
-    SSL_MSG_SET("Plain text must be aligned\n")
+    SSL_MSG_SET("Encrypted data must be aligned\n")
     return -61;
   }
 
