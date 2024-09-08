@@ -185,7 +185,7 @@ endif
 test: rnd_debug_test.o utility_debug_test.o nakamoto_debug_test.o logger_debug_test.o
 ifneq ("$(wildcard $(OPENSSL_DIR)/*)","")
 	@echo "Build test (TEST) object"
-	@$(CC) -O2 $(TEST_DIR)/test.c $(SOURCE_DIR)/utility_debug.o $(SOURCE_DIR)/rnd_debug.o $(SOURCE_DIR)/nakamoto_debug.o $(SOURCE_DIR)/logger_debug.o $(SOURCE_DIR)/test/asserts.c -I$(INCLUDEDIR) -I$(INCLUDEDIR_TEST) -o $(TEST_DIR)/$(TEST_FILE_NAME) $(DEBUG_FLAG) -DVISIBLE_FOR_TEST
+	@$(CC) -O2 $(TEST_DIR)/main.c $(TEST_DIR)/testutil.c $(SOURCE_DIR)/utility_debug.o $(SOURCE_DIR)/rnd_debug.o $(SOURCE_DIR)/nakamoto_debug.o $(SOURCE_DIR)/logger_debug.o $(SOURCE_DIR)/test/asserts.c -I$(INCLUDEDIR) -I$(INCLUDEDIR_TEST) -o $(TEST_DIR)/$(TEST_FILE_NAME) $(DEBUG_FLAG) -DVISIBLE_FOR_TEST
 	cd $(TEST_DIR);./$(TEST_FILE_NAME)
 else
 	@echo $(NAKAMOTO_INSTALL_MSG)

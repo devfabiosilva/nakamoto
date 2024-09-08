@@ -69,5 +69,11 @@ make clean
 make remove_ssl
 ```
 
+### Test project
+
+```
+make test
+```
+
 Have fun :)
 

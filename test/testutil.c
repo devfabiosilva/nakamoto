@@ -1,58 +1,4 @@
-#include <test/asserts.h>
-#include <logger.h>
-#include <nakamoto.h>
-#include <string.h>
-#include <rnd.h>
-#include <stdlib.h>
-
-#define VERSION_MAJOR_STR "0"
-#define VERSION_MINOR_STR "1"
-#define VERSION_REVISION_STR "1"
-
-#define STR_CONST(str) str, (sizeof(str)-1)
-#define VEC_CONST(vec) vec, sizeof(vec)
-#define CLEAR_VECTOR(vec) memset(vec, 0, sizeof(vec));
-#define COMPARE_VECTORS(vec1, vec2) is_vec_content_eq(vec1, sizeof(vec1), vec2, sizeof(vec2))
-
-struct test_encryption_aes_256_t {
-  uint8_t iv[16];
-  uint8_t priv_key[32];
-  uint8_t *encrypted_data;
-  size_t encrypted_data_size;
-  const char *message;
-  size_t message_size;
-};
-
-void TEST_check_digest();
-void TEST_entropy();
-void TEST_generate_random_pass();
-struct test_encryption_aes_256_t *TEST_encryption_aes_256();
-void TEST_decryption_aes_256(struct test_encryption_aes_256_t *ctx);
-void TEST_encryption_aes_256_destroy(struct test_encryption_aes_256_t **);
-
-int main(int argc, char **argv)
-{
-  struct test_encryption_aes_256_t *encryption_test;
-  TITLE_MSG("Initializing tests")
-
-  C_ASSERT_EQUAL_STRING(
-    VERSION_MAJOR_STR"."VERSION_MINOR_STR"."VERSION_REVISION_STR,
-    get_version_str(),
-    CTEST_SETTER(
-      CTEST_TITLE("Check Nakamoto version ...")
-    )
-  )
-
-  TEST_check_digest();
-  TEST_entropy();
-  TEST_generate_random_pass();
-  encryption_test = TEST_encryption_aes_256();
-  TEST_decryption_aes_256(encryption_test);
-  TEST_encryption_aes_256_destroy(&encryption_test);
-
-  end_tests();
-  return 0;
-}
+#include "testutil.h"
 
 void TEST_check_digest() {
   int err;
@@ -303,8 +249,9 @@ _Static_assert((sizeof(PLAIN_TEXT)-1)&0x0F, "PLAIN_TEXT LENGHT MUST BE NOT MULTI
 _Static_assert(sizeof(IV_TEST)-1 == 16, "IV_TEST STRING MUST HAVE LENGTH = 16");
 _Static_assert(sizeof(PRIVATE_KEY_TEST)-1 == 32, "PRIVATE_KEY_TEST STRING MUST HAVE LENGTH = 32");
 
-void TEST_encryption_aes_256_destroy(struct test_encryption_aes_256_t **ctx)
+static void TEST_encryption_aes_256_destroy(void *context)
 {
+  struct test_encryption_aes_256_t **ctx = (struct test_encryption_aes_256_t **)context;
   if (*ctx) {
     free((void *)(*ctx)->encrypted_data);
     free((void *)(*ctx));
@@ -491,18 +438,20 @@ struct test_encryption_aes_256_t *TEST_encryption_aes_256()
 #undef PRIVATE_KEY_TEST
 #undef IV_TEST
 #undef PLAIN_TEXT
-
+//TEST_encryption_aes_256_destroy
 void TEST_decryption_aes_256(struct test_encryption_aes_256_t *ctx)
 {
   int err, testNumber = 0;
   uint8_t decryptedData[64];
   size_t decryptedData_size = 0;
   char *errMsg;
+  void *context = (void *)ctx;
 
   TITLE_MSG("Begin decryption test AES 256 ...")
 
   C_ASSERT_NOT_NULL(ctx, CTEST_SETTER(
-   CTEST_TITLE("Check (%d) encryption context of last test is NOT NULL %p", ++testNumber, ctx)
+   CTEST_TITLE("Check (%d) encryption context of last test is NOT NULL %p", ++testNumber, ctx),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   CLEAR_VECTOR(decryptedData);
@@ -511,20 +460,23 @@ void TEST_decryption_aes_256(struct test_encryption_aes_256_t *ctx)
     decryptedData, &decryptedData_size, ctx->encrypted_data, ctx->encrypted_data_size, ctx->iv, ctx->priv_key, &errMsg);
 
   C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
-   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg)
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   C_ASSERT_TRUE(err == -60, CTEST_SETTER(
    CTEST_TITLE("Check if HAS ERROR = -60. Output pointer decryptedData (%p) with size = 0", decryptedData),
    CTEST_ON_ERROR("Was expected error = -60, but found error = %d", err),
-   CTEST_ON_SUCCESS("Error = -60 success")
+   CTEST_ON_SUCCESS("Error = -60 success"),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   C_ASSERT_EQUAL_STRING(
     "Invalid output/input data\n",
     errMsg,
     CTEST_SETTER(
-      CTEST_TITLE("Check errMsg error description")
+      CTEST_TITLE("Check errMsg error description"),
+      CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
     )
   )
 
@@ -533,20 +485,23 @@ void TEST_decryption_aes_256(struct test_encryption_aes_256_t *ctx)
     decryptedData, &decryptedData_size, ctx->encrypted_data, 0, ctx->iv, ctx->priv_key, &errMsg);
 
   C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
-   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg)
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   C_ASSERT_TRUE(err == -60, CTEST_SETTER(
    CTEST_TITLE("Check if HAS ERROR = -60. Input pointer with encrypted data (%p) with size = 0", ctx->encrypted_data),
    CTEST_ON_ERROR("Was expected error = -60, but found error = %d", err),
-   CTEST_ON_SUCCESS("Error = -60 success")
+   CTEST_ON_SUCCESS("Error = -60 success"),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   C_ASSERT_EQUAL_STRING(
     "Invalid output/input data\n",
     errMsg,
     CTEST_SETTER(
-      CTEST_TITLE("Check errMsg error description")
+      CTEST_TITLE("Check errMsg error description"),
+      CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
     )
   )
 
@@ -554,20 +509,23 @@ void TEST_decryption_aes_256(struct test_encryption_aes_256_t *ctx)
     decryptedData, &decryptedData_size, ctx->encrypted_data, 1, ctx->iv, ctx->priv_key, &errMsg);
 
   C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
-   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg)
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   C_ASSERT_TRUE(err == -61, CTEST_SETTER(
    CTEST_TITLE("Check if HAS ERROR = -61. Check if encrypted data is aligned (%p)", ctx->encrypted_data),
    CTEST_ON_ERROR("Was expected error = -61 (DECRYPTION INPUT NOT ALIGNED IN MEMORY), but found error = %d", err),
-   CTEST_ON_SUCCESS("Error = -61 success")
+   CTEST_ON_SUCCESS("Error = -61 success"),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   C_ASSERT_EQUAL_STRING(
     "Encrypted data must be aligned\n",
     errMsg,
     CTEST_SETTER(
-      CTEST_TITLE("Check errMsg error description must contain: DECRYPTION INPUT NOT ALIGNED IN MEMORY")
+      CTEST_TITLE("Check errMsg error description must contain: DECRYPTION INPUT NOT ALIGNED IN MEMORY"),
+      CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
     )
   )
 
@@ -576,20 +534,23 @@ void TEST_decryption_aes_256(struct test_encryption_aes_256_t *ctx)
     decryptedData, &decryptedData_size, ctx->encrypted_data, ctx->encrypted_data_size, ctx->iv, ctx->priv_key, &errMsg);
 
   C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
-   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg)
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   C_ASSERT_TRUE(err == -62, CTEST_SETTER(
    CTEST_TITLE("Check if HAS ERROR = -62. Check if buffer size is greater or equal encrypted aligned data size"),
    CTEST_ON_ERROR("Was expected error = -62 (BUFFER HAS NO SIZE TO STORE DECRYPTED DATA), but found error = %d", err),
-   CTEST_ON_SUCCESS("Error = -62 success")
+   CTEST_ON_SUCCESS("Error = -62 success"),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   C_ASSERT_EQUAL_STRING(
     "No space for decrypt data\n",
     errMsg,
     CTEST_SETTER(
-      CTEST_TITLE("Check errMsg error description must contain: BUFFER HAS NO SIZE TO STORE DECRYPTED DATA")
+      CTEST_TITLE("Check errMsg error description must contain: BUFFER HAS NO SIZE TO STORE DECRYPTED DATA"),
+      CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
     )
   )
 
@@ -601,20 +562,23 @@ void TEST_decryption_aes_256(struct test_encryption_aes_256_t *ctx)
     decryptedData, &decryptedData_size, ctx->encrypted_data, ctx->encrypted_data_size, ctx->iv, ctx->priv_key, &errMsg);
 
   C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
-   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg)
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   C_ASSERT_TRUE(err == 0, CTEST_SETTER(
    CTEST_TITLE("Check DECRYPTED SUCCESS"),
    CTEST_ON_ERROR("Was expected error = 0 (DECRYPTED SUCCESS), but found error = %d", err),
-   CTEST_ON_SUCCESS("Error = 0 success")
+   CTEST_ON_SUCCESS("Error = 0 success"),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   C_ASSERT_EQUAL_STRING(
     "Decrypt SUCCESS\n",
     errMsg,
     CTEST_SETTER(
-      CTEST_TITLE("Check errMsg error description must contain: DECRYPTED SUCCESS")
+      CTEST_TITLE("Check errMsg error description must contain: DECRYPTED SUCCESS"),
+      CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
     )
   )
 
@@ -622,7 +586,8 @@ void TEST_decryption_aes_256(struct test_encryption_aes_256_t *ctx)
    CTEST_TITLE("Check (%d) if decryptedData (%p) size = %lu is less than decrypetedData maximum buffer size = %lu",
      ++testNumber, decryptedData, decryptedData_size, sizeof(decryptedData)),
    CTEST_ON_ERROR("decryptedData_size = %lu is NOT less or equal to decrypetedData maximum buffer size %lu", decryptedData_size, sizeof(decryptedData)),
-   CTEST_ON_SUCCESS("decryptedData_size (%lu) is less or equal to decrypetedData maximum buffer size %lu success", decryptedData_size, sizeof(decryptedData))
+   CTEST_ON_SUCCESS("decryptedData_size (%lu) is less or equal to decrypetedData maximum buffer size %lu success", decryptedData_size, sizeof(decryptedData)),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   INFO_MSG("DECRYPTED PLAIN (STEP 1: Incorrect iv).")
@@ -635,13 +600,15 @@ void TEST_decryption_aes_256(struct test_encryption_aes_256_t *ctx)
    CTEST_TITLE("Check (%d) if decryptedData (%p) size = %lu is greater or equal than original message size = %lu at pointer (%p)",
      ++testNumber, decryptedData, decryptedData_size, ctx->message_size, ctx->message),
    CTEST_ON_ERROR("decryptedData_size = %lu is NOT greater or equal than original message size = %lu", decryptedData_size, ctx->message_size),
-   CTEST_ON_SUCCESS("decryptedData_size (%lu) is greater or equal to original message size %lu success", decryptedData_size, ctx->message_size)
+   CTEST_ON_SUCCESS("decryptedData_size (%lu) is greater or equal to original message size %lu success", decryptedData_size, ctx->message_size),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   C_ASSERT_TRUE(!is_vec_content_eq((uint8_t *)ctx->message, ctx->message_size, decryptedData, ctx->message_size), CTEST_SETTER(
    CTEST_TITLE("Check (%d) if decryptedData (%p) is NOT equal to original message (%p)", ++testNumber, decryptedData, ctx->message),
    CTEST_ON_ERROR("decryptedData equal than original message size with wrong iv"),
-   CTEST_ON_SUCCESS("Original message NOT equal to decrypted data with wrong iv. Success")
+   CTEST_ON_SUCCESS("Original message NOT equal to decrypted data with wrong iv. Success"),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   INFO_MSG("DECRYPTED SCENARIO (STEP 2: Different salt and wrong private key).")
@@ -652,20 +619,23 @@ void TEST_decryption_aes_256(struct test_encryption_aes_256_t *ctx)
     decryptedData, &decryptedData_size, ctx->encrypted_data, ctx->encrypted_data_size, ctx->iv, ctx->priv_key, &errMsg);
 
   C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
-   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg)
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   C_ASSERT_TRUE(err == 0, CTEST_SETTER(
    CTEST_TITLE("Check DECRYPTED SUCCESS"),
    CTEST_ON_ERROR("Was expected error = 0 (DECRYPTED SUCCESS), but found error = %d", err),
-   CTEST_ON_SUCCESS("Error = 0 success")
+   CTEST_ON_SUCCESS("Error = 0 success"),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   C_ASSERT_EQUAL_STRING(
     "Decrypt SUCCESS\n",
     errMsg,
     CTEST_SETTER(
-      CTEST_TITLE("Check errMsg error description must contain: DECRYPTED SUCCESS")
+      CTEST_TITLE("Check errMsg error description must contain: DECRYPTED SUCCESS"),
+      CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
     )
   )
 
@@ -673,7 +643,8 @@ void TEST_decryption_aes_256(struct test_encryption_aes_256_t *ctx)
    CTEST_TITLE("Check (%d) if decryptedData (%p) size = %lu is less than decrypetedData maximum buffer size = %lu",
      ++testNumber, decryptedData, decryptedData_size, sizeof(decryptedData)),
    CTEST_ON_ERROR("decryptedData_size = %lu is NOT less or equal to decrypetedData maximum buffer size %lu", decryptedData_size, sizeof(decryptedData)),
-   CTEST_ON_SUCCESS("decryptedData_size (%lu) is less or equal to decrypetedData maximum buffer size %lu success", decryptedData_size, sizeof(decryptedData))
+   CTEST_ON_SUCCESS("decryptedData_size (%lu) is less or equal to decrypetedData maximum buffer size %lu success", decryptedData_size, sizeof(decryptedData)),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   INFO_MSG("DECRYPTED PLAIN (STEP 2: Incorrect iv and private key).")
@@ -686,13 +657,15 @@ void TEST_decryption_aes_256(struct test_encryption_aes_256_t *ctx)
    CTEST_TITLE("Check (%d) if decryptedData (%p) size = %lu is greater or equal than original message size = %lu at pointer (%p)",
      ++testNumber, decryptedData, decryptedData_size, ctx->message_size, ctx->message),
    CTEST_ON_ERROR("decryptedData_size = %lu is NOT greater or equal than original message size = %lu", decryptedData_size, ctx->message_size),
-   CTEST_ON_SUCCESS("decryptedData_size (%lu) is greater or equal to original message size %lu success", decryptedData_size, ctx->message_size)
+   CTEST_ON_SUCCESS("decryptedData_size (%lu) is greater or equal to original message size %lu success", decryptedData_size, ctx->message_size),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   C_ASSERT_TRUE(!is_vec_content_eq((uint8_t *)ctx->message, ctx->message_size, decryptedData, ctx->message_size), CTEST_SETTER(
    CTEST_TITLE("Check (%d) if decryptedData (%p) is NOT equal to original message (%p)", ++testNumber, decryptedData, ctx->message),
    CTEST_ON_ERROR("decryptedData equal than original message size with wrong iv and private key"),
-   CTEST_ON_SUCCESS("Original message NOT equal to decrypted data with wrong iv and private key. Success")
+   CTEST_ON_SUCCESS("Original message NOT equal to decrypted data with wrong iv and private key. Success"),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   INFO_MSG("DECRYPTED SCENARIO (STEP 3: Correct salt and private key).")
@@ -704,20 +677,23 @@ void TEST_decryption_aes_256(struct test_encryption_aes_256_t *ctx)
     decryptedData, &decryptedData_size, ctx->encrypted_data, ctx->encrypted_data_size, ctx->iv, ctx->priv_key, &errMsg);
 
   C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
-   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg)
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   C_ASSERT_TRUE(err == 0, CTEST_SETTER(
    CTEST_TITLE("Check DECRYPTED SUCCESS"),
    CTEST_ON_ERROR("Was expected error = 0 (DECRYPTED SUCCESS), but found error = %d", err),
-   CTEST_ON_SUCCESS("Error = 0 success")
+   CTEST_ON_SUCCESS("Error = 0 success"),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   C_ASSERT_EQUAL_STRING(
     "Decrypt SUCCESS\n",
     errMsg,
     CTEST_SETTER(
-      CTEST_TITLE("Check errMsg error description must contain: DECRYPTED SUCCESS")
+      CTEST_TITLE("Check errMsg error description must contain: DECRYPTED SUCCESS"),
+      CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
     )
   )
 
@@ -725,7 +701,8 @@ void TEST_decryption_aes_256(struct test_encryption_aes_256_t *ctx)
    CTEST_TITLE("Check (%d) if decryptedData (%p) size = %lu is less than decrypetedData maximum buffer size = %lu",
      ++testNumber, decryptedData, decryptedData_size, sizeof(decryptedData)),
    CTEST_ON_ERROR("decryptedData_size = %lu is NOT less or equal to decrypetedData maximum buffer size %lu", decryptedData_size, sizeof(decryptedData)),
-   CTEST_ON_SUCCESS("decryptedData_size (%lu) is less or equal to decrypetedData maximum buffer size %lu success", decryptedData_size, sizeof(decryptedData))
+   CTEST_ON_SUCCESS("decryptedData_size (%lu) is less or equal to decrypetedData maximum buffer size %lu success", decryptedData_size, sizeof(decryptedData)),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   INFO_MSG("DECRYPTED PLAIN (STEP 3: Correct iv and private key).")
@@ -738,14 +715,18 @@ void TEST_decryption_aes_256(struct test_encryption_aes_256_t *ctx)
    CTEST_TITLE("Check (%d) if decryptedData (%p) size = %lu is greater or equal than original message size = %lu at pointer (%p)",
      ++testNumber, decryptedData, decryptedData_size, ctx->message_size, ctx->message),
    CTEST_ON_ERROR("decryptedData_size = %lu is NOT greater or equal than original message size = %lu", decryptedData_size, ctx->message_size),
-   CTEST_ON_SUCCESS("decryptedData_size (%lu) is greater or equal to original message size %lu success", decryptedData_size, ctx->message_size)
+   CTEST_ON_SUCCESS("decryptedData_size (%lu) is greater or equal to original message size %lu success", decryptedData_size, ctx->message_size),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
 
   C_ASSERT_TRUE(is_vec_content_eq((uint8_t *)ctx->message, ctx->message_size, decryptedData, ctx->message_size), CTEST_SETTER(
    CTEST_TITLE("Check (%d) if decryptedData (%p) contains original message (%p)", ++testNumber, decryptedData, ctx->message),
    CTEST_ON_ERROR("decryptedData does NOT contain original message"),
    CTEST_ON_SUCCESS("Original message \"%s\" at pointer %p is contained in decrypted data \"%s\" at pointer %p are equals. Success",
-     ctx->message, ctx->message, (char *)decryptedData, decryptedData)
+     ctx->message, ctx->message, (char *)decryptedData, decryptedData),
+   CTEST_ON_ERROR_CB(TEST_encryption_aes_256_destroy, (void *)&context)
   ))
+
+  TEST_encryption_aes_256_destroy((void *)&context);
 }
 
