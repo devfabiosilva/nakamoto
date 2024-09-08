@@ -194,7 +194,9 @@ void WRITE_end_header(struct file_util_t **file_util)
 
 // return 0 if sucess
 // !!! Assumes always: n > max >= min
+#ifndef VISIBLE_FOR_TEST
 static
+#endif
 int pass_must_have_at_least(size_t *passwd_sz, char *password, size_t n, size_t min, size_t max, int must_have)
 {
   int err;

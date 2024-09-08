@@ -142,5 +142,9 @@ _Static_assert(FILE_BUFFER_SIZE>CIPHER_INFO_SZ, "CIPHER_INFO_SZ is less than FIL
 #define MUST_HAVE (PASS_MUST_HAVE_AT_LEAST_ONE_NUMBER|PASS_MUST_HAVE_AT_LEAST_ONE_SYMBOL|PASS_MUST_HAVE_AT_LEAST_ONE_UPPER_CASE| \
   PASS_MUST_HAVE_AT_LEAST_ONE_LOWER_CASE)
 
+#ifdef VISIBLE_FOR_TEST
+int pass_must_have_at_least(size_t *, char *, size_t, size_t, size_t, int);
+#endif
+
 #endif
 

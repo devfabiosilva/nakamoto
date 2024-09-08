@@ -730,3 +730,44 @@ void TEST_decryption_aes_256(struct test_encryption_aes_256_t *ctx)
   TEST_encryption_aes_256_destroy((void *)&context);
 }
 
+void TEST_password_strength()
+{
+#define MIN_PASS 8
+#define MAX_PASS 20
+#define N_PASS (MAX_PASS + 2)
+  int err, must_have = PASS_MUST_HAVE_AT_LEAST_NONE;
+
+  size_t password_sz;
+
+  TITLE_MSG("Begin Test of password strength")
+
+  err = pass_must_have_at_least(&password_sz, NULL, N_PASS, MIN_PASS, MAX_PASS, must_have);
+
+  C_ASSERT_TRUE(err == PASS_IS_NULL, CTEST_SETTER(
+   CTEST_TITLE("Check if password is valid (NOT NULL)"),
+   CTEST_ON_ERROR("Was expected error = PASS_IS_NULL (%d), but found error = %d", PASS_IS_NULL, err),
+   CTEST_ON_SUCCESS("Success error = PASS_IS_NULL (%d) for password NULL", PASS_IS_NULL)
+  ))
+
+  err = pass_must_have_at_least(&password_sz, "weak", N_PASS, MIN_PASS, MAX_PASS, must_have);
+
+  C_ASSERT_TRUE(err == PASS_IS_TOO_SHORT, CTEST_SETTER(
+   CTEST_TITLE("Check week password with length < MIN_PASS = %d", MIN_PASS),
+   CTEST_ON_ERROR("Was expected error = PASS_IS_TOO_SHORT (%d), but found error = %d", PASS_IS_TOO_SHORT, err),
+   CTEST_ON_SUCCESS("Success error = PASS_IS_TOO_SHORT (%d) for password length = %lu < MIN_PASS = %d", PASS_IS_TOO_SHORT, password_sz, MIN_PASS)
+  ))
+
+  err = pass_must_have_at_least(&password_sz, "This password is too long, thus error = PASS_IS_OUT_OVF will occur", N_PASS, MIN_PASS, MAX_PASS, must_have);
+
+  C_ASSERT_TRUE(err == PASS_IS_OUT_OVF, CTEST_SETTER(
+   CTEST_TITLE("Check week password with length >= N_PASS = %d", N_PASS),
+   CTEST_ON_ERROR("Was expected error = PASS_IS_OUT_OVF (%d), but found error = %d", PASS_IS_OUT_OVF, err),
+   CTEST_ON_SUCCESS("Success error = PASS_IS_OUT_OVF (%d) for password length", PASS_IS_OUT_OVF)
+  ))
+
+#undef N_PASS
+#undef MAX_PASS
+#undef MIN_PASS
+
+}
+

@@ -18,6 +18,8 @@ int main(int argc, char **argv)
   TEST_decryption_aes_256(
     TEST_encryption_aes_256()
   );
+  TEST_password_strength();
+
   end_tests();
   return 0;
 }
