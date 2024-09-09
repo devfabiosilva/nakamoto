@@ -737,6 +737,7 @@ void TEST_password_strength()
 #define N_PASS (MAX_PASS + 2)
   int err, must_have = PASS_MUST_HAVE_AT_LEAST_NONE;
 
+  char *password;
   size_t password_sz;
 
   TITLE_MSG("Begin Test of password strength")
@@ -752,7 +753,7 @@ void TEST_password_strength()
   err = pass_must_have_at_least(&password_sz, "weak", N_PASS, MIN_PASS, MAX_PASS, must_have);
 
   C_ASSERT_TRUE(err == PASS_IS_TOO_SHORT, CTEST_SETTER(
-   CTEST_TITLE("Check week password with length < MIN_PASS = %d", MIN_PASS),
+   CTEST_TITLE("Check weak password with length < MIN_PASS = %d", MIN_PASS),
    CTEST_ON_ERROR("Was expected error = PASS_IS_TOO_SHORT (%d), but found error = %d", PASS_IS_TOO_SHORT, err),
    CTEST_ON_SUCCESS("Success error = PASS_IS_TOO_SHORT (%d) for password length = %lu < MIN_PASS = %d", PASS_IS_TOO_SHORT, password_sz, MIN_PASS)
   ))
@@ -760,14 +761,151 @@ void TEST_password_strength()
   err = pass_must_have_at_least(&password_sz, "This password is too long, thus error = PASS_IS_OUT_OVF will occur", N_PASS, MIN_PASS, MAX_PASS, must_have);
 
   C_ASSERT_TRUE(err == PASS_IS_OUT_OVF, CTEST_SETTER(
-   CTEST_TITLE("Check week password with length >= N_PASS = %d", N_PASS),
+   CTEST_TITLE("Check password with length >= N_PASS = %d", N_PASS),
    CTEST_ON_ERROR("Was expected error = PASS_IS_OUT_OVF (%d), but found error = %d", PASS_IS_OUT_OVF, err),
    CTEST_ON_SUCCESS("Success error = PASS_IS_OUT_OVF (%d) for password length", PASS_IS_OUT_OVF)
+  ))
+
+  err = pass_must_have_at_least(&password_sz, "This password is ok??", N_PASS, MIN_PASS, MAX_PASS, must_have);
+
+  C_ASSERT_TRUE(err == PASS_IS_TOO_LONG, CTEST_SETTER(
+   CTEST_TITLE("Check password with length (%lu) > MAX_PASS = %d", password_sz, MAX_PASS),
+   CTEST_ON_ERROR("Was expected error = PASS_IS_TOO_LONG (%d), but found error = %d", PASS_IS_TOO_LONG, err),
+   CTEST_ON_SUCCESS("Success error = PASS_IS_TOO_LONG (%d) for password length = %lu > MAX_PASS = %d ", PASS_IS_TOO_LONG, password_sz, MAX_PASS)
+  ))
+
+  err = pass_must_have_at_least(&password_sz, "this password is ok.", N_PASS, MIN_PASS, MAX_PASS, must_have);
+
+  C_ASSERT_TRUE(err == 0, CTEST_SETTER(
+   CTEST_TITLE("Check password with length (%lu) is OK", password_sz),
+   CTEST_ON_ERROR("Was expected password OK (error = 0), but found error = %d", err),
+   CTEST_ON_SUCCESS("Success error = 0. Password is ok for PASS_MUST_HAVE_AT_LEAST_NONE = %d", PASS_MUST_HAVE_AT_LEAST_NONE)
+  ))
+
+  password = "THIS PASSWORD IS OK.";
+  err = pass_must_have_at_least(&password_sz, password, N_PASS, MIN_PASS, MAX_PASS, PASS_MUST_HAVE_AT_LEAST_ONE_LOWER_CASE);
+
+  C_ASSERT_TRUE(err == PASS_MUST_HAVE_AT_LEAST_ONE_LOWER_CASE, CTEST_SETTER(
+   CTEST_TITLE("Check password (\"%s\") with length (%lu) PASS_MUST_HAVE_AT_LEAST_ONE_LOWER_CASE (%d)",
+     password, password_sz, PASS_MUST_HAVE_AT_LEAST_ONE_LOWER_CASE),
+   CTEST_ON_ERROR("Was expected password OK (error = PASS_MUST_HAVE_AT_LEAST_ONE_LOWER_CASE (%d)), but found error = %d",
+     PASS_MUST_HAVE_AT_LEAST_ONE_LOWER_CASE, err),
+   CTEST_ON_SUCCESS("Success error = PASS_MUST_HAVE_AT_LEAST_ONE_LOWER_CASE (%d). Password NOT ok for PASS_MUST_HAVE_AT_LEAST_ONE_LOWER_CASE",
+     PASS_MUST_HAVE_AT_LEAST_ONE_LOWER_CASE)
+  ))
+
+  password = "THIS PASSWORD IS Ok.";
+  err = pass_must_have_at_least(&password_sz, password, N_PASS, MIN_PASS, MAX_PASS, PASS_MUST_HAVE_AT_LEAST_ONE_LOWER_CASE);
+
+  C_ASSERT_TRUE(err == 0, CTEST_SETTER(
+   CTEST_TITLE("Check password (\"%s\") with length (%lu) PASS_MUST_HAVE_AT_LEAST_ONE_LOWER_CASE (%d) must pass",
+     password, password_sz, PASS_MUST_HAVE_AT_LEAST_ONE_LOWER_CASE),
+   CTEST_ON_ERROR("Was expected password OK (error = 0), but found error = %d", err),
+   CTEST_ON_SUCCESS("Success error = 0. Password (\"%s\") contains at least one lower case ", password)
+  ))
+
+  password = "this password is ok.";
+  err = pass_must_have_at_least(&password_sz, password, N_PASS, MIN_PASS, MAX_PASS, PASS_MUST_HAVE_AT_LEAST_ONE_UPPER_CASE);
+
+  C_ASSERT_TRUE(err == PASS_MUST_HAVE_AT_LEAST_ONE_UPPER_CASE, CTEST_SETTER(
+   CTEST_TITLE("Check password (\"%s\") with length (%lu) PASS_MUST_HAVE_AT_LEAST_ONE_UPPER_CASE (%d) must NOT pass",
+     password, password_sz, PASS_MUST_HAVE_AT_LEAST_ONE_UPPER_CASE),
+   CTEST_ON_ERROR("Was expected password (error = PASS_MUST_HAVE_AT_LEAST_ONE_UPPER_CASE (%d)), but found error = %d",
+     PASS_MUST_HAVE_AT_LEAST_ONE_UPPER_CASE, err),
+   CTEST_ON_SUCCESS("Success error = PASS_MUST_HAVE_AT_LEAST_ONE_UPPER_CASE (%d). Password (\"%s\") NOT contains at least one upper case ",
+     PASS_MUST_HAVE_AT_LEAST_ONE_UPPER_CASE, password)
+  ))
+
+  password = "This password is ok.";
+  err = pass_must_have_at_least(&password_sz, password, N_PASS, MIN_PASS, MAX_PASS, PASS_MUST_HAVE_AT_LEAST_ONE_UPPER_CASE);
+
+  C_ASSERT_TRUE(err == 0, CTEST_SETTER(
+   CTEST_TITLE("Check password (\"%s\") with length (%lu) PASS_MUST_HAVE_AT_LEAST_ONE_UPPER_CASE (%d) must pass",
+     password, password_sz, PASS_MUST_HAVE_AT_LEAST_ONE_UPPER_CASE),
+   CTEST_ON_ERROR("Was expected password OK (error = 0), but found error = %d", err),
+   CTEST_ON_SUCCESS("Success error = 0. Password (\"%s\")contains at least one upper case ", password)
+  ))
+
+  password = "This password is ok.";
+  err = pass_must_have_at_least(&password_sz, password, N_PASS, MIN_PASS, MAX_PASS, PASS_MUST_HAVE_AT_LEAST_ONE_NUMBER);
+
+  C_ASSERT_TRUE(err == PASS_MUST_HAVE_AT_LEAST_ONE_NUMBER, CTEST_SETTER(
+   CTEST_TITLE("Check password (\"%s\") with length (%lu) PASS_MUST_HAVE_AT_LEAST_ONE_NUMBER (%d) must NOT pass",
+     password, password_sz, PASS_MUST_HAVE_AT_LEAST_ONE_NUMBER),
+   CTEST_ON_ERROR("Was expected password (error = PASS_MUST_HAVE_AT_LEAST_ONE_NUMBER (%d)), but found error = %d", PASS_MUST_HAVE_AT_LEAST_ONE_NUMBER, err),
+   CTEST_ON_SUCCESS("Success error = PASS_MUST_HAVE_AT_LEAST_ONE_NUMBER (%d). Password (\"%s\") NOT contains at least one number",
+     PASS_MUST_HAVE_AT_LEAST_ONE_NUMBER, password)
+  ))
+
+  password = "This password is ok9";
+  err = pass_must_have_at_least(&password_sz, password, N_PASS, MIN_PASS, MAX_PASS, PASS_MUST_HAVE_AT_LEAST_ONE_NUMBER);
+
+  C_ASSERT_TRUE(err == 0, CTEST_SETTER(
+   CTEST_TITLE("Check password (\"%s\") with length (%lu) PASS_MUST_HAVE_AT_LEAST_ONE_NUMBER (%d) must pass",
+     password, password_sz, PASS_MUST_HAVE_AT_LEAST_ONE_NUMBER),
+   CTEST_ON_ERROR("Was expected password OK (error = 0), but found error = %d", err),
+   CTEST_ON_SUCCESS("Success error = 0. Password (\"%s\") contains at least one number", password)
+  ))
+
+  password = "This password is ok";
+  err = pass_must_have_at_least(&password_sz, password, N_PASS, MIN_PASS, MAX_PASS, PASS_MUST_HAVE_AT_LEAST_ONE_SYMBOL);
+
+  C_ASSERT_TRUE(err == PASS_MUST_HAVE_AT_LEAST_ONE_SYMBOL, CTEST_SETTER(
+   CTEST_TITLE("Check password (\"%s\") with length (%lu) PASS_MUST_HAVE_AT_LEAST_ONE_SYMBOL (%d) must NOT pass",
+     password, password_sz, PASS_MUST_HAVE_AT_LEAST_ONE_SYMBOL),
+   CTEST_ON_ERROR("Was expected password (error = PASS_MUST_HAVE_AT_LEAST_ONE_SYMBOL (%d)), but found error = %d", PASS_MUST_HAVE_AT_LEAST_ONE_SYMBOL, err),
+   CTEST_ON_SUCCESS("Success error = PASS_MUST_HAVE_AT_LEAST_ONE_SYMBOL (%d). Password (\"%s\") contains at least one symbol",
+     PASS_MUST_HAVE_AT_LEAST_ONE_SYMBOL, password)
+  ))
+
+  password = "This password is ok#";
+  err = pass_must_have_at_least(&password_sz, password, N_PASS, MIN_PASS, MAX_PASS, PASS_MUST_HAVE_AT_LEAST_ONE_SYMBOL);
+
+  C_ASSERT_TRUE(err == 0, CTEST_SETTER(
+   CTEST_TITLE("Check password (\"%s\") with length (%lu) PASS_MUST_HAVE_AT_LEAST_ONE_SYMBOL (%d) must pass",
+     password, password_sz, PASS_MUST_HAVE_AT_LEAST_ONE_SYMBOL),
+   CTEST_ON_ERROR("Was expected password OK (error = 0), but found error = %d", err),
+   CTEST_ON_SUCCESS("Success error = 0. Password (\"%s\") contains at least one symbol", password)
+  ))
+
+  password = "this password is ok";
+  must_have = PASS_MUST_HAVE_AT_LEAST_ONE_SYMBOL|PASS_MUST_HAVE_AT_LEAST_ONE_NUMBER|PASS_MUST_HAVE_AT_LEAST_ONE_UPPER_CASE|PASS_MUST_HAVE_AT_LEAST_ONE_LOWER_CASE;
+  err = pass_must_have_at_least(&password_sz, password, N_PASS, MIN_PASS, MAX_PASS, must_have);
+
+#define MISSING_ONES (PASS_MUST_HAVE_AT_LEAST_ONE_SYMBOL|PASS_MUST_HAVE_AT_LEAST_ONE_NUMBER|PASS_MUST_HAVE_AT_LEAST_ONE_UPPER_CASE)
+  C_ASSERT_TRUE(err == MISSING_ONES, CTEST_SETTER(
+   CTEST_TITLE("Check password (\"%s\") with length (%lu) has missing |upper case|number|symbol| (%d) must NOT pass",
+     password, password_sz, MISSING_ONES),
+   CTEST_ON_ERROR("Was expected password (error = %d) missing |upper case|number|symbol|, but found error = %d", MISSING_ONES, err),
+   CTEST_ON_SUCCESS("Success error = %d. Password (\"%s\") NOT contains at least one missing |upper case|number| symbol|", MISSING_ONES, password)
+  ))
+#undef MISSING_ONES
+
+  password = "THIS PASSWORD IS OK";
+  must_have = PASS_MUST_HAVE_AT_LEAST_ONE_SYMBOL|PASS_MUST_HAVE_AT_LEAST_ONE_NUMBER|PASS_MUST_HAVE_AT_LEAST_ONE_UPPER_CASE|PASS_MUST_HAVE_AT_LEAST_ONE_LOWER_CASE;
+  err = pass_must_have_at_least(&password_sz, password, N_PASS, MIN_PASS, MAX_PASS, must_have);
+
+#define MISSING_ONES (PASS_MUST_HAVE_AT_LEAST_ONE_SYMBOL|PASS_MUST_HAVE_AT_LEAST_ONE_NUMBER|PASS_MUST_HAVE_AT_LEAST_ONE_LOWER_CASE)
+  C_ASSERT_TRUE(err == MISSING_ONES, CTEST_SETTER(
+   CTEST_TITLE("Check password (\"%s\") with length (%lu) has missing |lower case|number|symbol| (%d) must NOT pass",
+     password, password_sz, MISSING_ONES),
+   CTEST_ON_ERROR("Was expected password (error = %d) missing |lower case|number|symbol|, but found error = %d", MISSING_ONES, err),
+   CTEST_ON_SUCCESS("Success error = %d. Password (\"%s\") NOT contains at least one missing |lower case|number| symbol|", MISSING_ONES, password)
+  ))
+#undef MISSING_ONES
+
+  password = "THIS pass Is Ok #1";
+  must_have = PASS_MUST_HAVE_AT_LEAST_ONE_SYMBOL|PASS_MUST_HAVE_AT_LEAST_ONE_NUMBER|PASS_MUST_HAVE_AT_LEAST_ONE_UPPER_CASE|PASS_MUST_HAVE_AT_LEAST_ONE_LOWER_CASE;
+  err = pass_must_have_at_least(&password_sz, password, N_PASS, MIN_PASS, MAX_PASS, must_have);
+
+  C_ASSERT_TRUE(err == 0, CTEST_SETTER(
+   CTEST_TITLE("Check password (\"%s\") with length (%lu) has at least one |upper case|lower case|number|symbol| must pass", password, password_sz),
+   CTEST_ON_ERROR("Was expected password (error = 0), but found error = %d", err),
+   CTEST_ON_SUCCESS("Success error = 0. Password (\"%s\") contains at least one |upper case|lower case|number|symbol|", password)
   ))
 
 #undef N_PASS
 #undef MAX_PASS
 #undef MIN_PASS
-
 }
 
