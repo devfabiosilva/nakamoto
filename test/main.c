@@ -19,6 +19,7 @@ int main(int argc, char **argv)
     TEST_encryption_aes_256()
   );
   TEST_password_strength();
+  TEST_pbkdf2();
 
   end_tests();
   return 0;

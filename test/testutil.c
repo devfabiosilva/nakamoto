@@ -909,3 +909,18 @@ void TEST_password_strength()
 #undef MIN_PASS
 }
 
+void TEST_pbkdf2()
+{
+  int err;
+  uint8_t 
+    out[32],
+    salt[32];
+  char *errMsg;
+
+  TITLE_MSG("Begin Test of PBKDF2 algorithm ...")
+
+  err = pbkdf2(out, sizeof(out), NULL, 0, salt, sizeof(salt), 8192, &errMsg);
+
+// TODO Implement
+}
+
