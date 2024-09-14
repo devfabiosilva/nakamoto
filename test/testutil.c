@@ -1,5 +1,14 @@
 #include "testutil.h"
 
+static int is_vec_null(uint8_t *vec, ssize_t vec_sz)
+{
+  while (vec_sz > 0)
+    if (vec[--vec_sz])
+      return 0;
+
+  return 1;
+}
+
 void TEST_check_digest() {
   int err;
   uint8_t sha512[64];
@@ -911,16 +920,149 @@ void TEST_password_strength()
 
 void TEST_pbkdf2()
 {
-  int err;
+  int err, testNumber = 0;
   uint8_t 
     out[32],
-    salt[32];
+    salt[32],
+    out2[32],
+    salt2[32];
   char *errMsg;
 
   TITLE_MSG("Begin Test of PBKDF2 algorithm ...")
 
-  err = pbkdf2(out, sizeof(out), NULL, 0, salt, sizeof(salt), 8192, &errMsg);
+  CLEAR_VECTOR(out)
+  CLEAR_VECTOR(salt)
+  CLEAR_VECTOR(out2)
+  CLEAR_VECTOR(salt2)
 
-// TODO Implement
+#define PBKDF2_ITER 1000000
+#define PBKDF2_PASS "Password"
+  err = pbkdf2(VEC_CONST(out), NULL, 0, VEC_CONST(salt), PBKDF2_ITER, &errMsg);
+
+  C_ASSERT_TRUE(err == -30, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) PBKDF2 function to return error given NULL password", ++testNumber),
+   CTEST_ON_ERROR("Was expected password (error = -30), but found error = %d", err),
+   CTEST_ON_SUCCESS("Success error = -30")
+  ))
+
+  C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR("Was expected errMsg pointer NOT NULL, but is NULL"),
+   CTEST_ON_SUCCESS("Success errMsg (%p) NOT NULL", errMsg)
+  ))
+
+  C_ASSERT_EQUAL_STRING(
+    "Null password\n",
+    errMsg,
+    CTEST_SETTER(
+      CTEST_TITLE("Check errMsg has correct description"),
+      CTEST_ON_ERROR("Wrong correct message errMsg = \"%s\"", errMsg),
+      CTEST_ON_SUCCESS("Success errMsg = \"%s\"", errMsg)
+    )
+  )
+
+  err = pbkdf2(VEC_CONST(out), STR_CONST(""), VEC_CONST(salt), PBKDF2_ITER, &errMsg);
+
+  C_ASSERT_TRUE(err == -31, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) PBKDF2 function to return error given empty password", ++testNumber),
+   CTEST_ON_ERROR("Was expected empty password (error = -31), but found error = %d", err),
+   CTEST_ON_SUCCESS("Success error = -31")
+  ))
+
+  C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR("Was expected errMsg pointer NOT NULL, but is NULL"),
+   CTEST_ON_SUCCESS("Success errMsg (%p) NOT NULL", errMsg)
+  ))
+
+  C_ASSERT_EQUAL_STRING(
+    "Empty password\n",
+    errMsg,
+    CTEST_SETTER(
+      CTEST_TITLE("Check errMsg has correct description"),
+      CTEST_ON_ERROR("Wrong correct message errMsg = \"%s\"", errMsg),
+      CTEST_ON_SUCCESS("Success errMsg = \"%s\"", errMsg)
+    )
+  )
+
+  err = pbkdf2(VEC_CONST(out), STR_CONST(PBKDF2_PASS), VEC_CONST(salt), PBKDF2_ITER, &errMsg);
+
+  C_ASSERT_TRUE(err == 0, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) PBKDF2 function to return error = 0 given password \""PBKDF2_PASS"\"", ++testNumber),
+   CTEST_ON_ERROR("Was expected password success (error = 0), but found error = %d", err),
+   CTEST_ON_SUCCESS("Success error = 0")
+  ))
+
+  C_ASSERT_FALSE(is_vec_null(VEC_CONST(out)), CTEST_SETTER(
+   CTEST_TITLE("Check (%d) out vector (%p) with size %lu is VECTOR NULL", ++testNumber, VEC_CONST(out)),
+   CTEST_ON_ERROR("Was expected VECTOR NOT NULL"),
+   CTEST_ON_SUCCESS("Success VECTOR at (%p) with size %lu is NOT NULL", VEC_CONST(out))
+  ))
+
+  debug_dump(VEC_CONST(out));
+
+  C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR("Was expected errMsg pointer NOT NULL, but is NULL"),
+   CTEST_ON_SUCCESS("Success errMsg (%p) NOT NULL", errMsg)
+  ))
+
+  C_ASSERT_EQUAL_STRING(
+    "PBKDF2-SHA256 success\n",
+    errMsg,
+    CTEST_SETTER(
+      CTEST_TITLE("Check errMsg has correct description"),
+      CTEST_ON_ERROR("Wrong correct message errMsg = \"%s\"", errMsg),
+      CTEST_ON_SUCCESS("Success errMsg = \"%s\"", errMsg)
+    )
+  )
+
+  salt2[0] = 1;
+  err = pbkdf2(VEC_CONST(out2), STR_CONST(PBKDF2_PASS), VEC_CONST(salt2), PBKDF2_ITER, &errMsg);
+
+  C_ASSERT_TRUE(err == 0, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) PBKDF2 function to return error = 0 given password \""PBKDF2_PASS"\" with SALT NON NULL", ++testNumber),
+   CTEST_ON_ERROR("Was expected password success (error = 0), but found error = %d", err),
+   CTEST_ON_SUCCESS("Success error = 0")
+  ))
+
+  C_ASSERT_FALSE(is_vec_null(VEC_CONST(out2)), CTEST_SETTER(
+   CTEST_TITLE("Check (%d) out2 vector (%p) with size %lu is VECTOR NULL", ++testNumber, VEC_CONST(out2)),
+   CTEST_ON_ERROR("Was expected VECTOR NOT NULL"),
+   CTEST_ON_SUCCESS("Success VECTOR at (%p) with size %lu is NOT NULL", VEC_CONST(out2))
+  ))
+
+  debug_dump(VEC_CONST(out2));
+
+  C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR("Was expected errMsg pointer NOT NULL, but is NULL"),
+   CTEST_ON_SUCCESS("Success errMsg (%p) NOT NULL", errMsg)
+  ))
+
+  C_ASSERT_EQUAL_STRING(
+    "PBKDF2-SHA256 success\n",
+    errMsg,
+    CTEST_SETTER(
+      CTEST_TITLE("Check errMsg has correct description"),
+      CTEST_ON_ERROR("Wrong correct message errMsg = \"%s\"", errMsg),
+      CTEST_ON_SUCCESS("Success errMsg = \"%s\"", errMsg)
+    )
+  )
+
+  C_ASSERT_FALSE(is_vec_content_eq(VEC_CONST(out2), VEC_CONST(out)), CTEST_SETTER(
+   CTEST_TITLE("Check (%d) out2 vector (%p) with size %lu is NOT EQUAL TO out (%p) vector with size %lu", ++testNumber, VEC_CONST(out2), VEC_CONST(out)),
+   CTEST_ON_ERROR("Was expected vector out (%p) %lu with out2 (%p) %lu to BE NOT EQUAL", VEC_CONST(out2), VEC_CONST(out)),
+   CTEST_ON_SUCCESS("Expected vector out (%p) %lu with out2 (%p) %lu to IS NOT EQUAL", VEC_CONST(out2), VEC_CONST(out))
+  ))
+
+  INFO_MSG_FMT("out2 (%p) vector with size %lu", VEC_CONST(out2))
+  debug_dump(VEC_CONST(out2));
+
+  INFO_MSG_FMT("out (%p) vector with size %lu", VEC_CONST(out))
+  debug_dump(VEC_CONST(out));
+
+#undef PBKDF2_PASS
+#undef PBKDF2_ITER
 }
 
