@@ -34,6 +34,7 @@ struct test_encryption_aes_256_t *TEST_encryption_aes_256();
 void TEST_decryption_aes_256(struct test_encryption_aes_256_t *ctx);
 void TEST_password_strength();
 void TEST_pbkdf2();
+void TEST_argon2id();
 
 #endif
 

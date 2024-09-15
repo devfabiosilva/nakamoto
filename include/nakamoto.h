@@ -143,6 +143,9 @@ _Static_assert(FILE_BUFFER_SIZE>CIPHER_INFO_SZ, "CIPHER_INFO_SZ is less than FIL
   PASS_MUST_HAVE_AT_LEAST_ONE_LOWER_CASE)
 
 #ifdef VISIBLE_FOR_TEST
+uint32_t getArgon2idMemCost();
+uint32_t getArgon2idInteractionCost();
+uint32_t getArgon2idParallelCost();
 int pass_must_have_at_least(size_t *, char *, size_t, size_t, size_t, int);
 #endif
 

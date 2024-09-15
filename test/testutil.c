@@ -1119,8 +1119,6 @@ void TEST_pbkdf2()
   INFO_MSG_FMT("with salt (%p) vector with size %lu", VEC_CONST(salt))
   debug_dump(VEC_CONST(salt));
 
-///////////
-
   err = pbkdf2(VEC_CONST(out2), STR_CONST(PBKDF2_PASS), VEC_CONST(salt), (PBKDF2_ITER - 1), &errMsg);
 
   C_ASSERT_TRUE(err == 0, CTEST_SETTER(
@@ -1175,5 +1173,54 @@ void TEST_pbkdf2()
 
 #undef PBKDF2_PASS
 #undef PBKDF2_ITER
+}
+
+void TEST_argon2id()
+{
+  int err, testNumber = 0;
+  uint8_t 
+    out[32],
+    salt[32],
+    out2[32],
+    salt2[32];
+  char *errMsg;
+
+#define TEST_MEM_COST getArgon2idMemCost()
+#define TEST_INTERACTION_COST getArgon2idInteractionCost()
+#define TEST_PARALLEL_COST getArgon2idParallelCost()
+  TITLE_MSG_FMT("Begin Test of ARGON2ID algorithm with:\n\n\tMem. Cost: %u\n\tInteraction Cost: %u\n\tParallel cost: %d\n",
+    TEST_MEM_COST, TEST_INTERACTION_COST, TEST_PARALLEL_COST)
+
+  CLEAR_VECTOR(out)
+  CLEAR_VECTOR(salt)
+  CLEAR_VECTOR(out2)
+  CLEAR_VECTOR(salt2)
+
+  err = argon2id(VEC_CONST(out), NULL, 0, VEC_CONST(salt), NULL, 0, NULL, 0, TEST_MEM_COST, TEST_INTERACTION_COST, TEST_PARALLEL_COST, &errMsg);
+
+  C_ASSERT_TRUE(err == -40, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) ARGON2ID function to return error given NULL password", ++testNumber),
+   CTEST_ON_ERROR("Was expected password (error = -40), but found error = %d", err),
+   CTEST_ON_SUCCESS("Success error = -40")
+  ))
+
+  C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR("Was expected errMsg pointer NOT NULL, but is NULL"),
+   CTEST_ON_SUCCESS("Success errMsg (%p) NOT NULL", errMsg)
+  ))
+
+  C_ASSERT_EQUAL_STRING(
+    "Null password\n",
+    errMsg,
+    CTEST_SETTER(
+      CTEST_TITLE("Check errMsg has correct description"),
+      CTEST_ON_ERROR("Wrong correct message errMsg = \"%s\"", errMsg),
+      CTEST_ON_SUCCESS("Success errMsg = \"%s\"", errMsg)
+    )
+  )
+#undef TEST_PARALLEL_COST
+#undef TEST_INTERACTION_COST
+#undef TEST_MEM_COST
 }
 

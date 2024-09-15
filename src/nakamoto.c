@@ -12,6 +12,19 @@
 #define OUT_FILENAME "out.txt"
 #define OUT_FILENAME_ENCRYPTED "out.nkm"
 
+#ifdef VISIBLE_FOR_TEST
+inline uint32_t getArgon2idMemCost() {
+  return ARGON2ID_MEM_COST;
+}
+
+inline uint32_t getArgon2idInteractionCost() {
+  return ARGON2ID_INTERACTION_COST;
+}
+
+inline uint32_t getArgon2idParallelCost() {
+  return ARGON2ID_PARALLEL_COST;
+}
+#endif
 
 _Static_assert(sizeof(((struct file_struct_t *)0)->description)>=sizeof(FILE_DESCRIPTION), "Description exceed size");
 

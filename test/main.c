@@ -20,6 +20,7 @@ int main(int argc, char **argv)
   );
   TEST_password_strength();
   TEST_pbkdf2();
+  TEST_argon2id();
 
   end_tests();
   return 0;
