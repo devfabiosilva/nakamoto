@@ -1188,6 +1188,8 @@ void TEST_argon2id()
 #define TEST_MEM_COST getArgon2idMemCost()
 #define TEST_INTERACTION_COST getArgon2idInteractionCost()
 #define TEST_PARALLEL_COST getArgon2idParallelCost()
+#define TEST_ARGON2ID_PASS "Argon2idPassword"
+
   TITLE_MSG_FMT("Begin Test of ARGON2ID algorithm with:\n\n\tMem. Cost: %u\n\tInteraction Cost: %u\n\tParallel cost: %d\n",
     TEST_MEM_COST, TEST_INTERACTION_COST, TEST_PARALLEL_COST)
 
@@ -1219,6 +1221,60 @@ void TEST_argon2id()
       CTEST_ON_SUCCESS("Success errMsg = \"%s\"", errMsg)
     )
   )
+
+  err = argon2id(VEC_CONST(out), "", 0, VEC_CONST(salt), NULL, 0, NULL, 0, TEST_MEM_COST, TEST_INTERACTION_COST, TEST_PARALLEL_COST, &errMsg);
+
+  C_ASSERT_TRUE(err == -41, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) ARGON2ID function to return error given EMPTY password", ++testNumber),
+   CTEST_ON_ERROR("Was expected password (error = -41), but found error = %d", err),
+   CTEST_ON_SUCCESS("Success error = -41")
+  ))
+
+  C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR("Was expected errMsg pointer NOT NULL, but is NULL"),
+   CTEST_ON_SUCCESS("Success errMsg (%p) NOT NULL", errMsg)
+  ))
+
+  C_ASSERT_EQUAL_STRING(
+    "Empty password\n",
+    errMsg,
+    CTEST_SETTER(
+      CTEST_TITLE("Check errMsg has correct description"),
+      CTEST_ON_ERROR("Wrong correct message errMsg = \"%s\"", errMsg),
+      CTEST_ON_SUCCESS("Success errMsg = \"%s\"", errMsg)
+    )
+  )
+
+  INFO_MSG_FMT("Testing of ARGON2ID algorithm with:\n\n\tMem. Cost: %u\n\tInteraction Cost: %u\n\tParallel cost: %d\n",
+    TEST_MEM_COST, TEST_INTERACTION_COST, TEST_PARALLEL_COST)
+
+  err = argon2id(VEC_CONST(out), STR_CONST(TEST_ARGON2ID_PASS), VEC_CONST(salt), NULL, 0, NULL, 0,
+    TEST_MEM_COST, TEST_INTERACTION_COST, TEST_PARALLEL_COST, &errMsg);
+
+  C_ASSERT_TRUE(err == 0, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) ARGON2ID function to return error given password = \""TEST_ARGON2ID_PASS"\"", ++testNumber),
+   CTEST_ON_ERROR("Was expected password (error = 0), but found error = %d", err),
+   CTEST_ON_SUCCESS("Success error = 0")
+  ))
+
+  C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR("Was expected errMsg pointer NOT NULL, but is NULL"),
+   CTEST_ON_SUCCESS("Success errMsg (%p) NOT NULL", errMsg)
+  ))
+
+  C_ASSERT_EQUAL_STRING(
+    "Argon2id success\n",
+    errMsg,
+    CTEST_SETTER(
+      CTEST_TITLE("Check errMsg has correct description"),
+      CTEST_ON_ERROR("Wrong correct message errMsg = \"%s\"", errMsg),
+      CTEST_ON_SUCCESS("Success errMsg = \"%s\"", errMsg)
+    )
+  )
+
+#undef TEST_ARGON2ID_PASS
 #undef TEST_PARALLEL_COST
 #undef TEST_INTERACTION_COST
 #undef TEST_MEM_COST
