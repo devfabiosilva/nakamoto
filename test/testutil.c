@@ -1274,6 +1274,45 @@ void TEST_argon2id()
     )
   )
 
+  salt2[0] = 1;
+
+  err = argon2id(VEC_CONST(out2), STR_CONST(TEST_ARGON2ID_PASS), VEC_CONST(salt2), NULL, 0, NULL, 0,
+    TEST_MEM_COST, TEST_INTERACTION_COST, TEST_PARALLEL_COST, &errMsg);
+
+  C_ASSERT_TRUE(err == 0, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) ARGON2ID function to return error given password = \""TEST_ARGON2ID_PASS"\" with different salt", ++testNumber),
+   CTEST_ON_ERROR("Was expected password (error = 0), but found error = %d", err),
+   CTEST_ON_SUCCESS("Success error = 0")
+  ))
+
+  C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR("Was expected errMsg pointer NOT NULL, but is NULL"),
+   CTEST_ON_SUCCESS("Success errMsg (%p) NOT NULL", errMsg)
+  ))
+
+  C_ASSERT_EQUAL_STRING(
+    "Argon2id success\n",
+    errMsg,
+    CTEST_SETTER(
+      CTEST_TITLE("Check errMsg has correct description"),
+      CTEST_ON_ERROR("Wrong correct message errMsg = \"%s\"", errMsg),
+      CTEST_ON_SUCCESS("Success errMsg = \"%s\"", errMsg)
+    )
+  )
+
+  INFO_MSG("out2 vector content")
+  debug_dump(VEC_CONST(out2));
+
+  INFO_MSG("out1 vector content")
+  debug_dump(VEC_CONST(out));
+
+  C_ASSERT_FALSE(is_vec_content_eq(VEC_CONST(out2), VEC_CONST(out)), CTEST_SETTER(
+   CTEST_TITLE("Check (%d) if vector out2 (%p) is NOT equal to vector out1 (%p) with same password and different salts", ++testNumber, out2, out),
+   CTEST_ON_ERROR("Was expected different vector for same password and different salt, but they are equals"),
+   CTEST_ON_SUCCESS("Vector out2 and out1 are different for same password and different salts")
+  ))
+
 #undef TEST_ARGON2ID_PASS
 #undef TEST_PARALLEL_COST
 #undef TEST_INTERACTION_COST
