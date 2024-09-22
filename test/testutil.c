@@ -1189,6 +1189,9 @@ void TEST_argon2id()
 #define TEST_INTERACTION_COST getArgon2idInteractionCost()
 #define TEST_PARALLEL_COST getArgon2idParallelCost()
 #define TEST_ARGON2ID_PASS "Argon2idPassword"
+#define TEST_INTERACTION_COST2 TEST_INTERACTION_COST-1
+#define TEST_MEM_COST2 TEST_MEM_COST-1
+#define TEST_PARALLEL_COST2 TEST_PARALLEL_COST-1
 
   TITLE_MSG_FMT("Begin Test of ARGON2ID algorithm with:\n\n\tMem. Cost: %u\n\tInteraction Cost: %u\n\tParallel cost: %d\n",
     TEST_MEM_COST, TEST_INTERACTION_COST, TEST_PARALLEL_COST)
@@ -1313,6 +1316,168 @@ void TEST_argon2id()
    CTEST_ON_SUCCESS("Vector out2 and out1 are different for same password and different salts")
   ))
 
+  CLEAR_VECTOR(out2)
+
+  err = argon2id(VEC_CONST(out2), STR_CONST(TEST_ARGON2ID_PASS"ABC"), VEC_CONST(salt), NULL, 0, NULL, 0,
+    TEST_MEM_COST, TEST_INTERACTION_COST, TEST_PARALLEL_COST, &errMsg);
+
+  C_ASSERT_TRUE(err == 0, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) ARGON2ID function to return error given password = \""TEST_ARGON2ID_PASS"ABC\" with same salt", ++testNumber),
+   CTEST_ON_ERROR("Was expected password (error = 0), but found error = %d", err),
+   CTEST_ON_SUCCESS("Success error = 0")
+  ))
+
+  C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR("Was expected errMsg pointer NOT NULL, but is NULL"),
+   CTEST_ON_SUCCESS("Success errMsg (%p) NOT NULL", errMsg)
+  ))
+
+  C_ASSERT_EQUAL_STRING(
+    "Argon2id success\n",
+    errMsg,
+    CTEST_SETTER(
+      CTEST_TITLE("Check errMsg has correct description"),
+      CTEST_ON_ERROR("Wrong correct message errMsg = \"%s\"", errMsg),
+      CTEST_ON_SUCCESS("Success errMsg = \"%s\"", errMsg)
+    )
+  )
+
+  INFO_MSG("out2 vector content")
+  debug_dump(VEC_CONST(out2));
+
+  INFO_MSG("out1 vector content")
+  debug_dump(VEC_CONST(out));
+
+  C_ASSERT_FALSE(is_vec_content_eq(VEC_CONST(out2), VEC_CONST(out)), CTEST_SETTER(
+   CTEST_TITLE("Check (%d) if vector out2 (%p) is NOT equal to vector out1 (%p) with different passwords and same salt", ++testNumber, out2, out),
+   CTEST_ON_ERROR("Was expected different vector for different passwords and same salts, but they are equals"),
+   CTEST_ON_SUCCESS("Vector out2 and out1 are different for different passwords and same salts")
+  ))
+
+  CLEAR_VECTOR(out2)
+
+  err = argon2id(VEC_CONST(out2), STR_CONST(TEST_ARGON2ID_PASS), VEC_CONST(salt), NULL, 0, NULL, 0,
+    TEST_MEM_COST, TEST_INTERACTION_COST2, TEST_PARALLEL_COST, &errMsg);
+
+  C_ASSERT_TRUE(err == 0, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) ARGON2ID function to return error given password = \""TEST_ARGON2ID_PASS"\" with different interaction cost %u",
+     ++testNumber, TEST_INTERACTION_COST2),
+   CTEST_ON_ERROR("Was expected password (error = 0), but found error = %d", err),
+   CTEST_ON_SUCCESS("Success error = 0")
+  ))
+
+  C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR("Was expected errMsg pointer NOT NULL, but is NULL"),
+   CTEST_ON_SUCCESS("Success errMsg (%p) NOT NULL", errMsg)
+  ))
+
+  C_ASSERT_EQUAL_STRING(
+    "Argon2id success\n",
+    errMsg,
+    CTEST_SETTER(
+      CTEST_TITLE("Check errMsg has correct description"),
+      CTEST_ON_ERROR("Wrong correct message errMsg = \"%s\"", errMsg),
+      CTEST_ON_SUCCESS("Success errMsg = \"%s\"", errMsg)
+    )
+  )
+
+  INFO_MSG_FMT("out2 vector content with interaction cost %u", TEST_INTERACTION_COST2)
+  debug_dump(VEC_CONST(out2));
+
+  INFO_MSG_FMT("out1 vector content with interaction cost %u", TEST_INTERACTION_COST)
+  debug_dump(VEC_CONST(out));
+
+  C_ASSERT_FALSE(is_vec_content_eq(VEC_CONST(out2), VEC_CONST(out)), CTEST_SETTER(
+   CTEST_TITLE("Check (%d) if vector out2 (%p) is NOT equal to vector out1 (%p) with different interaction cost", ++testNumber, out2, out),
+   CTEST_ON_ERROR("Was expected different vector for different interaction cost, but they are equals"),
+   CTEST_ON_SUCCESS("Vector out2 and out1 are different for different interaction cost")
+  ))
+
+  CLEAR_VECTOR(out2)
+
+  err = argon2id(VEC_CONST(out2), STR_CONST(TEST_ARGON2ID_PASS), VEC_CONST(salt), NULL, 0, NULL, 0,
+    TEST_MEM_COST2, TEST_INTERACTION_COST, TEST_PARALLEL_COST, &errMsg);
+
+  C_ASSERT_TRUE(err == 0, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) ARGON2ID function to return error given password = \""TEST_ARGON2ID_PASS"\" with different memory cost %u",
+     ++testNumber, TEST_MEM_COST2),
+   CTEST_ON_ERROR("Was expected password (error = 0), but found error = %d", err),
+   CTEST_ON_SUCCESS("Success error = 0")
+  ))
+
+  C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR("Was expected errMsg pointer NOT NULL, but is NULL"),
+   CTEST_ON_SUCCESS("Success errMsg (%p) NOT NULL", errMsg)
+  ))
+
+  C_ASSERT_EQUAL_STRING(
+    "Argon2id success\n",
+    errMsg,
+    CTEST_SETTER(
+      CTEST_TITLE("Check errMsg has correct description"),
+      CTEST_ON_ERROR("Wrong correct message errMsg = \"%s\"", errMsg),
+      CTEST_ON_SUCCESS("Success errMsg = \"%s\"", errMsg)
+    )
+  )
+
+  INFO_MSG_FMT("out2 vector content with memory cost %u", TEST_MEM_COST2)
+  debug_dump(VEC_CONST(out2));
+
+  INFO_MSG_FMT("out1 vector content with memory cost %u", TEST_MEM_COST)
+  debug_dump(VEC_CONST(out));
+
+  C_ASSERT_FALSE(is_vec_content_eq(VEC_CONST(out2), VEC_CONST(out)), CTEST_SETTER(
+   CTEST_TITLE("Check (%d) if vector out2 (%p) is NOT equal to vector out1 (%p) with different memory cost", ++testNumber, out2, out),
+   CTEST_ON_ERROR("Was expected different vector for different memory cost, but they are equals"),
+   CTEST_ON_SUCCESS("Vector out2 and out1 are different for memory cost")
+  ))
+
+  CLEAR_VECTOR(out2)
+
+  err = argon2id(VEC_CONST(out2), STR_CONST(TEST_ARGON2ID_PASS), VEC_CONST(salt), NULL, 0, NULL, 0,
+    TEST_MEM_COST, TEST_INTERACTION_COST, TEST_PARALLEL_COST2, &errMsg);
+
+  C_ASSERT_TRUE(err == 0, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) ARGON2ID function to return error given password = \""TEST_ARGON2ID_PASS"\" with different parallel cost %u",
+     ++testNumber, TEST_MEM_COST2),
+   CTEST_ON_ERROR("Was expected password (error = 0), but found error = %d", err),
+   CTEST_ON_SUCCESS("Success error = 0")
+  ))
+
+  C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR("Was expected errMsg pointer NOT NULL, but is NULL"),
+   CTEST_ON_SUCCESS("Success errMsg (%p) NOT NULL", errMsg)
+  ))
+
+  C_ASSERT_EQUAL_STRING(
+    "Argon2id success\n",
+    errMsg,
+    CTEST_SETTER(
+      CTEST_TITLE("Check errMsg has correct description"),
+      CTEST_ON_ERROR("Wrong correct message errMsg = \"%s\"", errMsg),
+      CTEST_ON_SUCCESS("Success errMsg = \"%s\"", errMsg)
+    )
+  )
+
+  INFO_MSG_FMT("out2 vector content with parallel cost %u", TEST_PARALLEL_COST2)
+  debug_dump(VEC_CONST(out2));
+
+  INFO_MSG_FMT("out1 vector content with parallel cost %u", TEST_PARALLEL_COST)
+  debug_dump(VEC_CONST(out));
+
+  C_ASSERT_FALSE(is_vec_content_eq(VEC_CONST(out2), VEC_CONST(out)), CTEST_SETTER(
+   CTEST_TITLE("Check (%d) if vector out2 (%p) is NOT equal to vector out1 (%p) with different parallel cost", ++testNumber, out2, out),
+   CTEST_ON_ERROR("Was expected different vector for different parallel cost, but they are equals"),
+   CTEST_ON_SUCCESS("Vector out2 and out1 are different for parallel cost")
+  ))
+
+#undef TEST_PARALLEL_COST
+#undef TEST_MEM_COST2
+#undef TEST_INTERACTION_COST2
 #undef TEST_ARGON2ID_PASS
 #undef TEST_PARALLEL_COST
 #undef TEST_INTERACTION_COST
