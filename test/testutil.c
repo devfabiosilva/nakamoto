@@ -1192,6 +1192,8 @@ void TEST_argon2id()
 #define TEST_INTERACTION_COST2 TEST_INTERACTION_COST-1
 #define TEST_MEM_COST2 TEST_MEM_COST-1
 #define TEST_PARALLEL_COST2 TEST_PARALLEL_COST-1
+#define ADDITIONAL_DATA "Additional data to increase complexity"
+#define ADDITIONAL_SECRET "Additional Secret To Increase Complexity"
 
   TITLE_MSG_FMT("Begin Test of ARGON2ID algorithm with:\n\n\tMem. Cost: %u\n\tInteraction Cost: %u\n\tParallel cost: %d\n",
     TEST_MEM_COST, TEST_INTERACTION_COST, TEST_PARALLEL_COST)
@@ -1475,6 +1477,126 @@ void TEST_argon2id()
    CTEST_ON_SUCCESS("Vector out2 and out1 are different for parallel cost")
   ))
 
+  CLEAR_VECTOR(out2)
+
+  err = argon2id(VEC_CONST(out2), STR_CONST(TEST_ARGON2ID_PASS), VEC_CONST(salt), (uint8_t *)STR_CONST(ADDITIONAL_DATA), NULL, 0,
+    TEST_MEM_COST, TEST_INTERACTION_COST, TEST_PARALLEL_COST2, &errMsg);
+
+  C_ASSERT_TRUE(err == 0, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) ARGON2ID function to return error given additional data = \""ADDITIONAL_DATA"\"", ++testNumber),
+   CTEST_ON_ERROR("Was expected password (error = 0), but found error = %d", err),
+   CTEST_ON_SUCCESS("Success error = 0")
+  ))
+
+  C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR("Was expected errMsg pointer NOT NULL, but is NULL"),
+   CTEST_ON_SUCCESS("Success errMsg (%p) NOT NULL", errMsg)
+  ))
+
+  C_ASSERT_EQUAL_STRING(
+    "Argon2id success\n",
+    errMsg,
+    CTEST_SETTER(
+      CTEST_TITLE("Check errMsg has correct description"),
+      CTEST_ON_ERROR("Wrong correct message errMsg = \"%s\"", errMsg),
+      CTEST_ON_SUCCESS("Success errMsg = \"%s\"", errMsg)
+    )
+  )
+
+  INFO_MSG("out2 vector content with additional data = \""ADDITIONAL_DATA"\"")
+  debug_dump(VEC_CONST(out2));
+
+  INFO_MSG("out1 vector content with no additional data")
+  debug_dump(VEC_CONST(out));
+
+  C_ASSERT_FALSE(is_vec_content_eq(VEC_CONST(out2), VEC_CONST(out)), CTEST_SETTER(
+   CTEST_TITLE("Check (%d) if vector out2 (%p) is NOT equal to vector out1 (%p) with additional data", ++testNumber, out2, out),
+   CTEST_ON_ERROR("Was expected different vector for additional data, but they are equals"),
+   CTEST_ON_SUCCESS("Vector out2 and out1 for additional data")
+  ))
+
+  CLEAR_VECTOR(out2)
+
+  err = argon2id(VEC_CONST(out2), STR_CONST(TEST_ARGON2ID_PASS), VEC_CONST(salt), NULL, 0, (uint8_t *)STR_CONST(ADDITIONAL_SECRET),
+    TEST_MEM_COST, TEST_INTERACTION_COST, TEST_PARALLEL_COST2, &errMsg);
+
+  C_ASSERT_TRUE(err == 0, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) ARGON2ID function to return error given additional secret = \""ADDITIONAL_SECRET"\"", ++testNumber),
+   CTEST_ON_ERROR("Was expected password (error = 0), but found error = %d", err),
+   CTEST_ON_SUCCESS("Success error = 0")
+  ))
+
+  C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR("Was expected errMsg pointer NOT NULL, but is NULL"),
+   CTEST_ON_SUCCESS("Success errMsg (%p) NOT NULL", errMsg)
+  ))
+
+  C_ASSERT_EQUAL_STRING(
+    "Argon2id success\n",
+    errMsg,
+    CTEST_SETTER(
+      CTEST_TITLE("Check errMsg has correct description"),
+      CTEST_ON_ERROR("Wrong correct message errMsg = \"%s\"", errMsg),
+      CTEST_ON_SUCCESS("Success errMsg = \"%s\"", errMsg)
+    )
+  )
+
+  INFO_MSG("out2 vector content with additional secret = \""ADDITIONAL_SECRET"\"")
+  debug_dump(VEC_CONST(out2));
+
+  INFO_MSG("out1 vector content with no additional secret")
+  debug_dump(VEC_CONST(out));
+
+  C_ASSERT_FALSE(is_vec_content_eq(VEC_CONST(out2), VEC_CONST(out)), CTEST_SETTER(
+   CTEST_TITLE("Check (%d) if vector out2 (%p) is NOT equal to vector out1 (%p) with additional secret", ++testNumber, out2, out),
+   CTEST_ON_ERROR("Was expected different vector for additional secret, but they are equals"),
+   CTEST_ON_SUCCESS("Vector out2 and out1 for additional secret")
+  ))
+
+  CLEAR_VECTOR(out2)
+
+  err = argon2id(VEC_CONST(out2), STR_CONST(TEST_ARGON2ID_PASS), VEC_CONST(salt), (uint8_t *)STR_CONST(ADDITIONAL_DATA), (uint8_t *)STR_CONST(ADDITIONAL_SECRET),
+    TEST_MEM_COST, TEST_INTERACTION_COST, TEST_PARALLEL_COST2, &errMsg);
+
+  C_ASSERT_TRUE(err == 0, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) ARGON2ID function to return error given additional secret = \""ADDITIONAL_SECRET"\" and additional data = \""ADDITIONAL_DATA"\"",
+     ++testNumber),
+   CTEST_ON_ERROR("Was expected password (error = 0), but found error = %d", err),
+   CTEST_ON_SUCCESS("Success error = 0")
+  ))
+
+  C_ASSERT_NOT_NULL(errMsg, CTEST_SETTER(
+   CTEST_TITLE("Check (%d) errMsg is NOT NULL %p", ++testNumber, errMsg),
+   CTEST_ON_ERROR("Was expected errMsg pointer NOT NULL, but is NULL"),
+   CTEST_ON_SUCCESS("Success errMsg (%p) NOT NULL", errMsg)
+  ))
+
+  C_ASSERT_EQUAL_STRING(
+    "Argon2id success\n",
+    errMsg,
+    CTEST_SETTER(
+      CTEST_TITLE("Check errMsg has correct description"),
+      CTEST_ON_ERROR("Wrong correct message errMsg = \"%s\"", errMsg),
+      CTEST_ON_SUCCESS("Success errMsg = \"%s\"", errMsg)
+    )
+  )
+
+  INFO_MSG("out2 vector content with additional secret = \""ADDITIONAL_SECRET"\" and additional data = \""ADDITIONAL_DATA"\"")
+  debug_dump(VEC_CONST(out2));
+
+  INFO_MSG("out1 vector content with no additional secret and additional data")
+  debug_dump(VEC_CONST(out));
+
+  C_ASSERT_FALSE(is_vec_content_eq(VEC_CONST(out2), VEC_CONST(out)), CTEST_SETTER(
+   CTEST_TITLE("Check (%d) if vector out2 (%p) is NOT equal to vector out1 (%p) with additional secret and additional data", ++testNumber, out2, out),
+   CTEST_ON_ERROR("Was expected different vector for additional secret and data, but they are equals"),
+   CTEST_ON_SUCCESS("Vector out2 and out1 for additional secret and data")
+  ))
+
+#undef ADDITIONAL_SECRET
+#undef ADDITIONAL_DATA
 #undef TEST_PARALLEL_COST
 #undef TEST_MEM_COST2
 #undef TEST_INTERACTION_COST2
