@@ -1,7 +1,7 @@
 # Changelog
 _nakamoto_ changelogs
 
-## [0.1.2] - 2024-08-25
+## [0.1.2] - 2024-09-24
 - Release 0.1.2 ✔️
 - Add tests to nakamoto ✔️
 
