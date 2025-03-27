@@ -38,6 +38,8 @@
 *.t
 nakamoto
 
+.vscode/
+
 #projects
 *.nkm
 out.txt
