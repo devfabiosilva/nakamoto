@@ -146,6 +146,22 @@ uint64_t *getCurrentSecond(uint64_t *timestamp)
 #define clear_entropy \
     memset((void *)rand_entropy->__entropy_val, 0, sizeof(rand_entropy->__entropy_val));
 
+/**
+ * @fn int verify_system_entropy(uint32_t type, void *rand, size_t rand_size, int timeoutInS)
+ * @brief Take a random number generator function and returns random value only if randomized data have a desired entropy value
+ * @param [in] type Entropy type. Entropy type values are:
+ *     - F_ENTROPY_TYPE_PARANOIC Highest level entropy recommended for generate a paranoic entropy. Very slow
+ *     - F_ENTROPY_TYPE_EXCELENT Gives a very excellent entropy. Slow
+ *     - F_ENTROPY_TYPE_GOOD Good entropy type. Normal.
+ *     - F_ENTROPY_TYPE_NOT_ENOUGH Moderate entropy. Usually fast to create a temporary random values. Fast
+ *     - F_ENTROPY_TYPE_NOT_RECOMENDED Fast but not recommended for generating ramdom.
+ * @param [out] rand Random data with a satisfied type of entropy
+ * @param [in] rand_size Size of random data output
+ * @param [in] timeoutInS timeout for random generator
+ *
+ * NOTE: This implementation is based on topic in <a href="https://web.mit.edu/16.unified/www/FALL/thermodynamics/notes/node56.html">Definition 7.12</a> in MIT opencourseware (7.3 A Statistical Definition of Entropy - 2005)<br> Many thanks to <b>Professor Z. S. Spakovszky</b> for this amazing topic
+ * @retval 0: On Success, otherwise Error
+ */
 int verify_system_entropy(
     uint32_t type,
     uint8_t *rand,

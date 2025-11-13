@@ -10,7 +10,7 @@
 
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 1
-#define VERSION_REVISION 4
+#define VERSION_REVISION 5
 #define GET_VER_MAJ(val) (val>>20)
 #define GET_VER_MIN(val) ((val>>10)&0x03FF)
 #define GET_VER_REV(val) (val&0x03FF)
