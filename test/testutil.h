@@ -10,7 +10,7 @@
 
 #define VERSION_MAJOR_STR "0"
 #define VERSION_MINOR_STR "1"
-#define VERSION_REVISION_STR "6"
+#define VERSION_REVISION_STR "7"
 
 #define STR_CONST(str) str, (sizeof(str)-1)
 #define VEC_CONST(vec) vec, sizeof(vec)
