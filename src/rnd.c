@@ -285,7 +285,7 @@ struct pass_list_t *pass_list_new(uint16_t numberOfList)
     N_DEBUGF("Init create random list. Start %p of size %lu", p, sizeof(struct pass_list_t))
   } else {
     free((void *)v);
-    N_DEBUGF("Could not create pass list :(. Vector v was free")
+    N_DEBUG("Could not create pass list :(. Vector v was free")
   }
 
   return p;
