@@ -93,7 +93,6 @@ jobs:
             echo "third-party/openssl already exists — skipping install_ssl"
           else
             echo "third-party/openssl not found — running make -j$MAKE_JOBS install_ssl"
-            mkdir -p third-party
             make -j$MAKE_JOBS install_ssl
           fi
 
