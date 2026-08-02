@@ -1,6 +1,12 @@
 # Changelog
 _nakamoto_ changelogs
 
+## [0.1.7] - 2026-08-02
+- Update OpenSSL version 4.0.1 => [4.0.1](https://github.com/openssl/openssl/releases#release-openssl-4.0.1) ✔️
+- All CVE's fixed in this version does not affect Nakamoto ✔️
+- Replace memset to explicit_bzero for clear vectors
+- Add open file check in random generator
+
 ## [0.1.6] - 2026-04-08
 - Update OpenSSL version 3.6.0 => [3.6.2](https://github.com/openssl/openssl/releases/tag/openssl-3.6.2) ✔️
 - All CVE's fixed in this version does not affect Nakamoto ✔️
@@ -43,5 +49,6 @@ _nakamoto_ changelogs
 [0.1.4]: https://github.com/devfabiosilva/nakamoto/tree/v0.1.4
 [0.1.5]: https://github.com/devfabiosilva/nakamoto/tree/v0.1.5
 [0.1.6]: https://github.com/devfabiosilva/nakamoto/tree/v0.1.6
+[0.1.7]: https://github.com/devfabiosilva/nakamoto/tree/v0.1.7
 [master]: https://github.com/devfabiosilva/nakamoto/tree/master
 

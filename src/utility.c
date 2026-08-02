@@ -699,7 +699,8 @@ void readFileAlignFree(uint8_t **data, size_t data_size)
 #endif
 
   if (data) {
-    memset((void *)*data, 0, data_size);
+    //memset((void *)*data, 0, data_size);
+    explicit_bzero((void *)*data, data_size);
     N_DEBUGF("Cleaning *data(%p) with size = %lu with 0", *data, data_size)
     N_DEBUG_DUMP(*data, data_size)
 #ifdef DEBUG
@@ -803,7 +804,8 @@ int set_password(struct pass_t **pwd)
   if (!(*pwd=(struct pass_t *)malloc(sizeof(struct pass_t))))
     return -120;
 
-  memset((void *)*pwd, 0, sizeof(struct pass_t));
+  //memset((void *)*pwd, 0, sizeof(struct pass_t));
+  explicit_bzero((void *)*pwd, sizeof(struct pass_t));
 
   fprintf(stdout, "\nType your password: ");
 
@@ -840,7 +842,8 @@ _Static_assert((sizeof(((struct pass_t *)0)->passwd))==(sizeof(((struct pass_t *
 
 set_password_fail:
 
-  memset((void *)(*pwd), 0, sizeof(struct pass_t));
+  //memset((void *)(*pwd), 0, sizeof(struct pass_t));
+  explicit_bzero((void *)(*pwd), sizeof(struct pass_t));
 
   if (gen_rand_no_entropy_util((uint8_t *)(*pwd), sizeof(struct pass_t)))
     N_WARN("Could not reset random password")
@@ -863,7 +866,8 @@ int get_password(struct pass_t **pwd)
   if (!(*pwd=(struct pass_t *)malloc(sizeof(struct pass_t))))
     return -130;
 
-  memset((void *)*pwd, 0, sizeof(struct pass_t));
+  //memset((void *)*pwd, 0, sizeof(struct pass_t));
+  explicit_bzero((void *)*pwd, sizeof(struct pass_t));
 
   fprintf(stdout, "\nType your password to unlock file: ");
 
@@ -880,7 +884,8 @@ int get_password(struct pass_t **pwd)
 
 get_password_fail:
 
-  memset((void *)(*pwd), 0, sizeof(struct pass_t));
+  //memset((void *)(*pwd), 0, sizeof(struct pass_t));
+  explicit_bzero((void *)(*pwd), sizeof(struct pass_t));
 
   if (gen_rand_no_entropy_util((uint8_t *)(*pwd), sizeof(struct pass_t)))
     N_WARN("Could not reset random password (unlock)")
@@ -899,7 +904,8 @@ get_password_fail:
 void pass_free(struct pass_t **pwd)
 {
   if (*pwd) {
-    memset((void *)(*pwd), 0, sizeof(struct pass_t));
+    //memset((void *)(*pwd), 0, sizeof(struct pass_t));
+    explicit_bzero((void *)(*pwd), sizeof(struct pass_t));
 
     if (gen_rand_no_entropy_util((uint8_t *)(*pwd), sizeof(struct pass_t)))
       N_WARN("Could not reset random password at free")

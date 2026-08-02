@@ -167,15 +167,18 @@ void WRITE_end_header(struct file_util_t **file_util)
     _file_buffer=(*file_util)->_file_buffer;
 
     N_DEBUGF("WRITE_end_header: Cleaning *file_util(%p) of size %lu", *file_util, sizeof(struct file_util_t))
-    memset((*file_util), 0, sizeof(struct file_util_t));
+    //memset((*file_util), 0, sizeof(struct file_util_t));
+    explicit_bzero((*file_util), sizeof(struct file_util_t));
     N_DEBUG_DUMP((*file_util), sizeof(struct file_util_t))
 
     N_DEBUGF("WRITE_end_header: Cleaning _file_buffer(%p) of size %lu", _file_buffer, FILE_BUFFER_BLOCK)
-    memset(_file_buffer, 0, FILE_BUFFER_BLOCK);
+    //memset(_file_buffer, 0, FILE_BUFFER_BLOCK);
+    explicit_bzero(_file_buffer, FILE_BUFFER_BLOCK);
     //N_DEBUG_DUMP(_file_buffer, FILE_BUFFER_BLOCK)
 
     N_DEBUGF("WRITE_end_header: Cleaning file_struct(%p) of size %lu", file_struct, FILE_STRUCT_SIZE)
-    memset(file_struct, 0, FILE_STRUCT_SIZE);
+    //memset(file_struct, 0, FILE_STRUCT_SIZE);
+    explicit_bzero(file_struct, FILE_STRUCT_SIZE);
     N_DEBUG_DUMP(file_struct, FILE_STRUCT_SIZE)
 
     if (gen_rand_no_entropy_util((uint8_t *)(*file_util), sizeof(struct file_util_t)))
@@ -640,7 +643,8 @@ int READ_extract(struct file_util_t *file_util, const char *password, const char
 
   N_DEBUGF("Cleaning private key 1 (BEFORE) at %p with size %lu", file_util->priv_key1, sizeof(file_util->priv_key1))
   N_DEBUG_DUMP(file_util->priv_key1, sizeof(file_util->priv_key1))
-  memset(file_util->priv_key1, 0, sizeof(file_util->priv_key1));
+  //memset(file_util->priv_key1, 0, sizeof(file_util->priv_key1));
+  explicit_bzero(file_util->priv_key1, sizeof(file_util->priv_key1));
   N_DEBUGF("Cleaning private key 1 (AFTER) at %p with size %lu", file_util->priv_key1, sizeof(file_util->priv_key1))
   N_DEBUG_DUMP(file_util->priv_key1, sizeof(file_util->priv_key1))
 
@@ -691,7 +695,8 @@ int READ_extract(struct file_util_t *file_util, const char *password, const char
 
   N_DEBUGF("Cleaning private key 2 (BEFORE) at %p with size %lu", file_util->priv_key2, sizeof(file_util->priv_key2))
   N_DEBUG_DUMP(file_util->priv_key2, sizeof(file_util->priv_key2))
-  memset(file_util->priv_key2, 0, sizeof(file_util->priv_key2));
+  //memset(file_util->priv_key2, 0, sizeof(file_util->priv_key2));
+  explicit_bzero(file_util->priv_key2, sizeof(file_util->priv_key2));
   N_DEBUGF("Cleaning private key 2 (AFTER) at %p with size %lu", file_util->priv_key2, sizeof(file_util->priv_key2))
   N_DEBUG_DUMP(file_util->priv_key2, sizeof(file_util->priv_key2))
 
@@ -746,11 +751,13 @@ void READ_end_header(struct file_util_t **file_util)
     N_DEBUGF("READ_end_header: Begin free %p", *file_util)
 
     N_DEBUGF("READ_end_header: Cleaning *file_util(%p) of size %lu", *file_util, sizeof(struct file_util_t))
-    memset((*file_util), 0, sizeof(struct file_util_t));
+    //memset((*file_util), 0, sizeof(struct file_util_t));
+    explicit_bzero((*file_util), sizeof(struct file_util_t));
     N_DEBUG_DUMP((*file_util), sizeof(struct file_util_t))
 
     N_DEBUGF("READ_end_header: Cleaning _file_buffer(%p) of size %lu", _file_buffer, FILE_BUFFER_BLOCK)
-    memset(_file_buffer, 0, FILE_BUFFER_BLOCK);
+    //memset(_file_buffer, 0, FILE_BUFFER_BLOCK);
+    explicit_bzero(_file_buffer, FILE_BUFFER_BLOCK);
 
     if (gen_rand_no_entropy_util((uint8_t *)(*file_util), sizeof(struct file_util_t)))
       N_WARN("READ reset file_util struct")

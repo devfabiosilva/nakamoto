@@ -1,0 +1,117 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      openssl_cache_enabled:
+        description: 'Enable OpenSSL cache (true/false)'
+        required: false
+        default: 'true'
+      openssl_version:
+        description: 'Fallback OpenSSL version/key to use for cache when no VERSION file is present'
+        required: false
+        default: 'openssl-default'
+
+env:
+  OPENSSL_CACHE_ENABLED: 'true'
+  OPENSSL_VERSION: 'openssl-default'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Apply workflow_dispatch inputs (if run manually)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [ -n "${{ github.event.inputs.openssl_cache_enabled }}" ]; then
+            echo "OPENSSL_CACHE_ENABLED=${{ github.event.inputs.openssl_cache_enabled }}" >> $GITHUB_ENV
+          fi
+          if [ -n "${{ github.event.inputs.openssl_version }}" ]; then
+            echo "OPENSSL_VERSION=${{ github.event.inputs.openssl_version }}" >> $GITHUB_ENV
+          fi
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential git pkg-config autoconf automake libtool perl lscpu
+
+      - name: Compute physical CPU count and make job counts
+        id: compute_jobs
+        run: |
+          phys=$(lscpu | awk '/Core\(s\) per socket:/ {c=$NF} /^Socket\(s\):/ {s=$NF} END{if(c==""||s=="") print 1; else print c*s}')
+          if [ -z "$phys" ] || [ "$phys" -lt 1 ]; then
+            phys=1
+          fi
+          N=$(( phys > 1 ? phys - 1 : 1 ))
+          echo "PHYS_CORES=$phys" >> $GITHUB_ENV
+          echo "MAKE_JOBS=$N" >> $GITHUB_ENV
+          echo "FINAL_JOBS=3" >> $GITHUB_ENV
+          echo "Computed physical cores=$phys, using MAKE_JOBS=$N"
+
+      - name: Generate OpenSSL cache key
+        id: cache_key
+        env:
+          OS: ${{ runner.os }}
+          OPENSSL_VERSION: ${{ env.OPENSSL_VERSION }}
+        run: |
+          # If you keep a file third-party/openssl/VERSION with the pinned version/hash,
+          # we will use that to build the cache key so changing it invalidates cache.
+          if [ -f third-party/openssl/VERSION ]; then
+            ver=$(cat third-party/openssl/VERSION | tr -d '[:space:]')
+            echo "key=openssl-${OS}-${ver}" >> $GITHUB_OUTPUT
+            echo "Using VERSION file for cache key: $ver"
+          else
+            echo "key=openssl-${OS}-${OPENSSL_VERSION}" >> $GITHUB_OUTPUT
+            echo "No VERSION file found; using OPENSSL_VERSION fallback: ${OPENSSL_VERSION}"
+          fi
+
+      - name: Restore OpenSSL cache
+        if: env.OPENSSL_CACHE_ENABLED == 'true'
+        uses: actions/cache@v4
+        with:
+          path: third-party/openssl
+          key: ${{ steps.cache_key.outputs.key }}
+          restore-keys: |
+            openssl-${{ runner.os }}-
+
+      - name: Install OpenSSL into third-party/openssl (only if missing)
+        run: |
+          set -e
+          if [ -d third-party/openssl ]; then
+            echo "third-party/openssl already exists — skipping install_ssl"
+          else
+            echo "third-party/openssl not found — running make -j$MAKE_JOBS install_ssl"
+            mkdir -p third-party
+            make -j$MAKE_JOBS install_ssl
+          fi
+
+      - name: Run tests
+        run: |
+          if make -n test >/dev/null 2>&1; then
+            echo "Running tests with make -j$MAKE_JOBS test"
+            make -j$MAKE_JOBS test
+          else
+            echo "No test target in Makefile or tests not runnable — skipping tests"
+          fi
+
+      - name: Build nakamoto executable
+        run: |
+          echo "Building final binary with make -j$FINAL_JOBS"
+          make -j$FINAL_JOBS
+
+      - name: Verify nakamoto executable exists
+        run: |
+          if [ -x ./nakamoto ]; then
+            echo "nakamoto executable found in repository root"
+          else
+            echo "Error: nakamoto executable not found in repository root after build"
+            ls -la
+            exit 1
+          fi 

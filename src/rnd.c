@@ -140,11 +140,18 @@ uint64_t *getCurrentSecond(uint64_t *timestamp)
 #define rand_entropy_init \
     (RAND_ENTROPY *)malloc(sizeof(RAND_ENTROPY))
 
+//#define rand_entropy_finish
+//    free(memset((void *)rand_entropy, 0, sizeof(RAND_ENTROPY)));
+
 #define rand_entropy_finish \
-    free(memset((void *)rand_entropy, 0, sizeof(RAND_ENTROPY)));
+    explicit_bzero((void *)rand_entropy, sizeof(RAND_ENTROPY)); \
+    free((void *)rand_entropy);
+
+//#define clear_entropy
+//    memset((void *)rand_entropy->__entropy_val, 0, sizeof(rand_entropy->__entropy_val));
 
 #define clear_entropy \
-    memset((void *)rand_entropy->__entropy_val, 0, sizeof(rand_entropy->__entropy_val));
+    explicit_bzero((void *)rand_entropy->__entropy_val, sizeof(rand_entropy->__entropy_val));
 
 /**
  * @fn int verify_system_entropy(uint32_t type, void *rand, size_t rand_size, int timeoutInS)
@@ -321,7 +328,8 @@ void pass_list_free(struct pass_list_t **pass_list)
     N_DEBUGF("Begin cleaning password in pass_list %p\n\tBefore:", *pass_list)
     N_DEBUG_DUMP_A(v, sz)
 
-    memset((void *)v, 0, sz);
+    //memset((void *)v, 0, sz);
+    explicit_bzero((void *)v, sz);
     N_DEBUG("\tAfter (clear):")
     N_DEBUG_DUMP_A(v, sz)
 
