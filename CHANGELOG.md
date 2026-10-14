@@ -1,6 +1,8 @@
 # Changelog
 _nakamoto_ changelogs
 
+## [0.1.9] - TODO
+
 ## [0.1.8] - 2026-10-14
 - Update OpenSSL version 4.0.1 => [4.0.3](https://github.com/openssl/openssl/releases#release-openssl-4.0.3) ✔️
 - All CVE's fixed in this version does not affect Nakamoto ✔️
@@ -55,5 +57,6 @@ _nakamoto_ changelogs
 [0.1.6]: https://github.com/devfabiosilva/nakamoto/tree/v0.1.6
 [0.1.7]: https://github.com/devfabiosilva/nakamoto/tree/v0.1.7
 [0.1.8]: https://github.com/devfabiosilva/nakamoto/tree/v0.1.8
+[0.1.9]: https://github.com/devfabiosilva/nakamoto/tree/v0.1.9
 [master]: https://github.com/devfabiosilva/nakamoto/tree/master
 
