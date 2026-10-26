@@ -1,6 +1,8 @@
 # Changelog
 _nakamoto_ changelogs
 
+## [0.1.10] - TODO
+
 ## [0.1.9] - 2026-10-26
 - Update OpenSSL version 4.0.3 => [4.1.0](https://github.com/openssl/openssl/releases#release-openssl-4.1.0) ✔️
 
@@ -59,5 +61,6 @@ _nakamoto_ changelogs
 [0.1.7]: https://github.com/devfabiosilva/nakamoto/tree/v0.1.7
 [0.1.8]: https://github.com/devfabiosilva/nakamoto/tree/v0.1.8
 [0.1.9]: https://github.com/devfabiosilva/nakamoto/tree/v0.1.9
+[0.1.10]: https://github.com/devfabiosilva/nakamoto/tree/v0.1.10
 [master]: https://github.com/devfabiosilva/nakamoto/tree/master
 
